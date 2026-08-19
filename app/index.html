@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BDR Bullpen</title>
+<style>
+  :root {
+    --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; --text: #1e293b;
+    --muted: #64748b; --accent: #0284c7; --green: #16a34a; --green-d: #15803d;
+    --red: #dc2626; --red-d: #b91c1c; --amber: #f2994a; --amber-d: #e08532;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg);
+    color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  }
+  header {
+    width: 100%; background: #fff; border-bottom: 1px solid var(--border);
+    padding: 14px 24px; display: flex; justify-content: space-between; align-items: center;
+  }
+  header .brand { font-weight: 800; color: var(--accent); font-size: 18px; }
+  header .who { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 12px; }
+  main { width: 100%; max-width: 480px; padding: 32px 20px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,.05); margin-bottom: 16px;
+  }
+  .center { text-align: center; }
+  h1 { font-size: 22px; margin: 0 0 8px; }
+  p.sub { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .03em; }
+  input[type="number"] {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px;
+  }
+  .toggle-row { display: flex; gap: 8px; }
+  .toggle-row button {
+    flex: 1; padding: 10px; border: 1px solid var(--border); background: #fff; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer; color: var(--muted);
+  }
+  .toggle-row button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn { display: block; width: 100%; padding: 12px; margin: 8px 0; font-size: 14px; font-weight: 700;
+    border: none; border-radius: 8px; cursor: pointer; transition: opacity .15s; }
+  .btn:hover { opacity: .9; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-yes { background: var(--green); color: #fff; }
+  .btn-no { background: var(--red); color: #fff; }
+  .btn-recall { background: var(--amber); color: #fff; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-google {
+    background: #fff; color: #1e293b; border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .meta { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; text-align: center; }
+  .rep-name { font-size: 30px; font-weight: 800; color: var(--accent); text-align: center; margin: 8px 0; }
+  .volume { text-align: center; font-size: 14px; color: var(--muted); margin-bottom: 16px; }
+  .error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; }
+  .success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 14px; border-radius: 8px; font-size: 14px; text-align: center; }
+  .hidden { display: none !important; }
+  a.signout { color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">BDR Bullpen</div>
+  <div class="who hidden" id="whoBox">
+    <span id="whoEmail"></span>
+    <a class="signout" id="signOutBtn">Sign out</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- LOGIN VIEW -->
+  <div id="loginView" class="card center hidden">
+    <h1>Sign in to route a lead</h1>
+    <p class="sub">shift4.com Google accounts only.</p>
+    <button class="btn btn-google" id="googleBtn">Sign in with Google</button>
+    <div id="loginError" class="error hidden" style="margin-top:14px"></div>
+  </div>
+
+  <!-- LEAD ENTRY VIEW -->
+  <div id="entryView" class="card hidden">
+    <h1>New inbound lead</h1>
+    <p class="sub">Enter the deal's TTV and whether it's hospitality.</p>
+
+    <label for="ttvInput">Terminal Transaction Volume ($)</label>
+    <input type="number" id="ttvInput" placeholder="e.g. 45000" min="1" step="1" />
+
+    <label>Shift4 Dine / Hospitality?</label>
+    <div class="toggle-row">
+      <button type="button" id="hospNoBtn" class="active">No</button>
+      <button type="button" id="hospYesBtn">Yes</button>
+    </div>
+
+    <button class="btn btn-primary" id="getAssignmentBtn" style="margin-top:22px">Get Assignment</button>
+    <div id="entryError" class="error hidden" style="margin-top:14px"></div>
+  </div>
+
+  <!-- PROPOSAL VIEW -->
+  <div id="proposalView" class="card hidden">
+    <div class="meta" id="assignmentType">—</div>
+    <div class="rep-name" id="repName">—</div>
+    <div class="volume">Allocated Volume: <b id="repVolume">$0</b></div>
+
+    <button class="btn btn-yes" id="yesBtn">YES — Available, log it</button>
+    <button class="btn btn-no" id="noBtn">NO — Busy, re-spin</button>
+    <button class="btn btn-recall hidden" id="recallBtn">DIRECT LOG TO —</button>
+    <button class="btn btn-ghost" id="cancelBtn">Cancel / fix typo</button>
+
+    <div id="proposalError" class="error hidden" style="margin-top:14px"></div>
+  </div>
+
+  <!-- SUCCESS VIEW -->
+  <div id="successView" class="card success hidden">
+    <div id="successMessage"></div>
+    <button class="btn btn-primary" id="nextLeadBtn" style="margin-top:16px">Route another lead</button>
+  </div>
+
+</main>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  const SUPABASE_URL = 'https://tvrqhnklnmtrachqackj.supabase.co';
+  const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_SqQrBjFymVrwwvH-GSu_Uw_qGnz_bcL';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+  // ---- element refs ----
+  const el = (id) => document.getElementById(id);
+  const views = {
+    login: el('loginView'), entry: el('entryView'), proposal: el('proposalView'), success: el('successView'),
+  };
+  function showView(name) {
+    Object.values(views).forEach((v) => v.classList.add('hidden'));
+    views[name].classList.remove('hidden');
+  }
+  function showError(boxId, message) {
+    const box = el(boxId);
+    box.textContent = message;
+    box.classList.remove('hidden');
+  }
+  function clearError(boxId) {
+    el(boxId).classList.add('hidden');
+    el(boxId).textContent = '';
+  }
+
+  // ---- state ----
+  let session = null;
+  let hospitality = false;
+  let currentLead = null;       // lead_queue row
+  let currentSession = null;    // assignment_session row (+ repName, ttv attached)
+
+  // ---- auth ----
+  async function init() {
+    const { data } = await supabase.auth.getSession();
+    session = data.session;
+    render();
+    supabase.auth.onAuthStateChange((_event, s) => { session = s; render(); });
+  }
+
+  function render() {
+    if (!session) {
+      el('whoBox').classList.add('hidden');
+      showView('login');
+      return;
+    }
+    el('whoBox').classList.remove('hidden');
+    el('whoEmail').textContent = session.user.email;
+    if (currentSession) showView('proposal');
+    else showView('entry');
+  }
+
+  el('googleBtn').addEventListener('click', async () => {
+    clearError('loginError');
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + window.location.pathname,
+        queryParams: { hd: 'shift4.com' },
+      },
+    });
+    if (error) showError('loginError', error.message);
+  });
+
+  el('signOutBtn').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    resetToEntry();
+  });
+
+  // ---- hospitality toggle ----
+  el('hospNoBtn').addEventListener('click', () => setHospitality(false));
+  el('hospYesBtn').addEventListener('click', () => setHospitality(true));
+  function setHospitality(val) {
+    hospitality = val;
+    el('hospNoBtn').classList.toggle('active', !val);
+    el('hospYesBtn').classList.toggle('active', val);
+  }
+
+  // ---- create lead + propose ----
+  el('getAssignmentBtn').addEventListener('click', async () => {
+    clearError('entryError');
+    const ttv = Number(el('ttvInput').value);
+    if (!ttv || ttv <= 0) { showError('entryError', 'Enter a valid TTV amount.'); return; }
+
+    el('getAssignmentBtn').disabled = true;
+    try {
+      const { data: lead, error: leadErr } = await supabase
+        .from('lead_queue')
+        .insert({
+          bdr_user_id: session.user.id,
+          bdr_email: session.user.email,
+          ttv,
+          hospitality,
+        })
+        .select()
+        .single();
+      if (leadErr) throw leadErr;
+      currentLead = lead;
+      await propose(lead.id);
+    } catch (err) {
+      showError('entryError', err.message || String(err));
+    } finally {
+      el('getAssignmentBtn').disabled = false;
+    }
+  });
+
+  async function propose(leadId) {
+    const { data, error } = await supabase.rpc('propose_assignment', { p_lead_queue_id: leadId });
+    if (error) { showError('entryError', error.message); return; }
+    await attachRepAndShow(data);
+  }
+
+  async function attachRepAndShow(assignmentSession) {
+    const { data: rep } = await supabase.from('reps').select('name').eq('id', assignmentSession.proposed_rep_id).single();
+    currentSession = { ...assignmentSession, repName: rep ? rep.name : '(unknown)' };
+    el('assignmentType').textContent = currentSession.assignment_type;
+    el('repName').textContent = currentSession.repName;
+    el('repVolume').textContent = '$' + Number(currentSession.raw_volume).toLocaleString();
+    clearError('proposalError');
+    await refreshRecallButton();
+    showView('proposal');
+  }
+
+  async function refreshRecallButton() {
+    const { data: lead } = await supabase
+      .from('lead_queue')
+      .select('last_skipped_rep_id')
+      .eq('id', currentLead.id)
+      .single();
+    const recallBtn = el('recallBtn');
+    if (lead && lead.last_skipped_rep_id) {
+      const { data: rep } = await supabase.from('reps').select('name').eq('id', lead.last_skipped_rep_id).single();
+      recallBtn.textContent = 'DIRECT LOG TO ' + (rep ? rep.name.toUpperCase() : '—');
+      recallBtn.classList.remove('hidden');
+    } else {
+      recallBtn.classList.add('hidden');
+    }
+  }
+
+  // ---- YES / NO / RECALL / CANCEL ----
+  el('yesBtn').addEventListener('click', async () => {
+    clearError('proposalError');
+    const { data, error } = await supabase.rpc('confirm_assignment', { p_session_id: currentSession.id });
+    if (error) { showError('proposalError', error.message); return; }
+    showSuccess(`Logged to ${currentSession.repName}.`);
+  });
+
+  el('noBtn').addEventListener('click', async () => {
+    clearError('proposalError');
+    const { data, error } = await supabase.rpc('skip_assignment', { p_session_id: currentSession.id });
+    if (error) { showError('proposalError', error.message); return; }
+    await attachRepAndShow(data);
+  });
+
+  el('recallBtn').addEventListener('click', async () => {
+    clearError('proposalError');
+    const { data, error } = await supabase.rpc('recall_last_skipped', { p_session_id: currentSession.id });
+    if (error) { showError('proposalError', error.message); return; }
+    showSuccess('Logged to the recalled rep.');
+  });
+
+  el('cancelBtn').addEventListener('click', async () => {
+    if (currentSession) {
+      await supabase.rpc('cancel_assignment', { p_session_id: currentSession.id }).catch(() => {});
+    }
+    resetToEntry();
+  });
+
+  el('nextLeadBtn').addEventListener('click', resetToEntry);
+
+  function showSuccess(message) {
+    el('successMessage').textContent = message;
+    showView('success');
+  }
+
+  function resetToEntry() {
+    currentLead = null;
+    currentSession = null;
+    el('ttvInput').value = '';
+    setHospitality(false);
+    clearError('entryError');
+    clearError('proposalError');
+    render();
+  }
+
+  init();
+</script>
+
+</body>
+</html>
