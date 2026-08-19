@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BDR Bullpen — Manager Panel</title>
+<style>
+  :root {
+    --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; --text: #1e293b;
+    --muted: #64748b; --accent: #0284c7; --green: #16a34a; --green-d: #15803d;
+    --red: #dc2626; --red-d: #b91c1c; --amber: #f2994a; --amber-d: #e08532;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg);
+    color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  }
+  header {
+    width: 100%; background: #fff; border-bottom: 1px solid var(--border);
+    padding: 14px 24px; display: flex; justify-content: space-between; align-items: center;
+  }
+  header .brand { font-weight: 800; color: var(--accent); font-size: 18px; }
+  header .brand a { color: var(--muted); font-weight: 600; font-size: 13px; text-decoration: underline; margin-left: 14px; }
+  header .who { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 12px; }
+  a.signout { color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 13px; }
+  main { width: 100%; max-width: 1100px; padding: 32px 20px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,.05); margin-bottom: 16px;
+  }
+  .center { text-align: center; }
+  h1 { font-size: 22px; margin: 0 0 8px; }
+  p.sub { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+  .btn { display: inline-block; padding: 10px 16px; font-size: 14px; font-weight: 700;
+    border: none; border-radius: 8px; cursor: pointer; transition: opacity .15s; }
+  .btn:hover { opacity: .9; }
+  .btn-google {
+    background: #fff; color: #1e293b; border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%;
+  }
+  .error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; }
+  .hidden { display: none !important; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 10px 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  td input[type="number"] { width: 90px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
+  .status-btn { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); font-weight: 700; font-size: 12px; cursor: pointer; background: #fff; color: var(--muted); }
+  .status-btn.in { background: #dcfce7; border-color: #86efac; color: var(--green-d); }
+  .status-btn.out { background: #fee2e2; border-color: #fecaca; color: var(--red-d); }
+  .badge-raincheck { background: #fff7ed; border: 1px solid #fed7aa; color: var(--amber-d); padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .link-btn { background: none; border: none; color: var(--accent); text-decoration: underline; cursor: pointer; font-size: 12px; padding: 0; }
+  .row-saving { opacity: .5; }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: #1e293b; color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .toast.error { background: var(--red-d); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">BDR Bullpen — Manager <a href="./index.html">Back to routing app</a></div>
+  <div class="who hidden" id="whoBox">
+    <span id="whoEmail"></span>
+    <a class="signout" id="signOutBtn">Sign out</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- LOGIN VIEW -->
+  <div id="loginView" class="card center hidden">
+    <h1>Manager sign-in</h1>
+    <p class="sub">shift4.com Google accounts only.</p>
+    <button class="btn btn-google" id="googleBtn">Sign in with Google</button>
+    <div id="loginError" class="error hidden" style="margin-top:14px"></div>
+  </div>
+
+  <!-- UNAUTHORIZED VIEW -->
+  <div id="unauthorizedView" class="card center hidden">
+    <h1>Not authorized</h1>
+    <p class="sub">Your account doesn't have manager access to this panel. Ask whoever administers the Bullpen app to grant you the admin role.</p>
+  </div>
+
+  <!-- PANEL VIEW -->
+  <div id="panelView" class="card hidden">
+    <h1>Rep roster</h1>
+    <p class="sub">Changes save automatically.</p>
+    <div id="panelError" class="error hidden"></div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Bullpen</th>
+            <th>Min cap</th>
+            <th>Max cap</th>
+            <th>Dine eligible</th>
+            <th>Dials only</th>
+            <th>Raincheck</th>
+          </tr>
+        </thead>
+        <tbody id="repsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  const SUPABASE_URL = 'https://tvrqhnklnmtrachqackj.supabase.co';
+  const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_SqQrBjFymVrwwvH-GSu_Uw_qGnz_bcL';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+  const el = (id) => document.getElementById(id);
+  const views = { login: el('loginView'), unauthorized: el('unauthorizedView'), panel: el('panelView') };
+  function showView(name) {
+    Object.values(views).forEach((v) => v.classList.add('hidden'));
+    views[name].classList.remove('hidden');
+  }
+  function showError(boxId, message) {
+    const box = el(boxId);
+    box.textContent = message;
+    box.classList.remove('hidden');
+  }
+  function clearError(boxId) {
+    el(boxId).classList.add('hidden');
+    el(boxId).textContent = '';
+  }
+  function toast(message, isError) {
+    const t = el('toast');
+    t.textContent = message;
+    t.classList.toggle('error', !!isError);
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  let session = null;
+  let reps = [];
+
+  async function init() {
+    const { data } = await supabase.auth.getSession();
+    session = data.session;
+    await render();
+    supabase.auth.onAuthStateChange(async (_event, s) => { session = s; await render(); });
+  }
+
+  async function render() {
+    if (!session) {
+      el('whoBox').classList.add('hidden');
+      showView('login');
+      return;
+    }
+    el('whoBox').classList.remove('hidden');
+    el('whoEmail').textContent = session.user.email;
+
+    const { data: roleRow, error: roleErr } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    if (roleErr || !roleRow || roleRow.role !== 'admin') {
+      showView('unauthorized');
+      return;
+    }
+
+    await loadReps();
+    showView('panel');
+  }
+
+  async function loadReps() {
+    clearError('panelError');
+    const { data, error } = await supabase.from('reps').select('*').order('name');
+    if (error) { showError('panelError', error.message); return; }
+    reps = data || [];
+    renderTable();
+  }
+
+  function renderTable() {
+    const body = el('repsBody');
+    body.innerHTML = '';
+    for (const rep of reps) {
+      const tr = document.createElement('tr');
+      tr.dataset.id = rep.id;
+
+      const nameTd = document.createElement('td');
+      nameTd.textContent = rep.full_name ? `${rep.name} (${rep.full_name})` : rep.name;
+      tr.appendChild(nameTd);
+
+      const statusTd = document.createElement('td');
+      const statusBtn = document.createElement('button');
+      statusBtn.className = 'status-btn ' + (rep.bullpen_status ? 'in' : 'out');
+      statusBtn.textContent = rep.bullpen_status ? 'IN' : 'OUT';
+      statusBtn.addEventListener('click', () => updateRep(rep.id, { bullpen_status: !rep.bullpen_status }));
+      statusTd.appendChild(statusBtn);
+      tr.appendChild(statusTd);
+
+      const minTd = document.createElement('td');
+      const minInput = document.createElement('input');
+      minInput.type = 'number';
+      minInput.value = rep.min_cap;
+      minInput.addEventListener('change', () => updateRep(rep.id, { min_cap: Number(minInput.value) || 0 }));
+      minTd.appendChild(minInput);
+      tr.appendChild(minTd);
+
+      const maxTd = document.createElement('td');
+      const maxInput = document.createElement('input');
+      maxInput.type = 'number';
+      maxInput.value = rep.max_cap;
+      maxInput.addEventListener('change', () => updateRep(rep.id, { max_cap: Number(maxInput.value) || 999999999 }));
+      maxTd.appendChild(maxInput);
+      tr.appendChild(maxTd);
+
+      const dineTd = document.createElement('td');
+      const dineCb = document.createElement('input');
+      dineCb.type = 'checkbox';
+      dineCb.checked = rep.dine_eligible;
+      dineCb.addEventListener('change', () => updateRep(rep.id, { dine_eligible: dineCb.checked }));
+      dineTd.appendChild(dineCb);
+      tr.appendChild(dineTd);
+
+      const dialsTd = document.createElement('td');
+      const dialsCb = document.createElement('input');
+      dialsCb.type = 'checkbox';
+      dialsCb.checked = rep.dials_only;
+      dialsCb.addEventListener('change', () => updateRep(rep.id, { dials_only: dialsCb.checked }));
+      dialsTd.appendChild(dialsCb);
+      tr.appendChild(dialsTd);
+
+      const rainTd = document.createElement('td');
+      if (rep.raincheck_status) {
+        const badge = document.createElement('span');
+        badge.className = 'badge-raincheck';
+        badge.textContent = 'Raincheck';
+        rainTd.appendChild(badge);
+        const clearBtn = document.createElement('button');
+        clearBtn.className = 'link-btn';
+        clearBtn.textContent = 'Clear';
+        clearBtn.style.marginLeft = '8px';
+        clearBtn.addEventListener('click', () => updateRep(rep.id, { raincheck_status: false }));
+        rainTd.appendChild(clearBtn);
+      } else {
+        rainTd.textContent = '—';
+      }
+      tr.appendChild(rainTd);
+
+      body.appendChild(tr);
+    }
+  }
+
+  async function updateRep(id, patch) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    if (row) row.classList.add('row-saving');
+    const { error } = await supabase.from('reps').update(patch).eq('id', id);
+    if (row) row.classList.remove('row-saving');
+    if (error) {
+      toast('Save failed: ' + error.message, true);
+      return;
+    }
+    const idx = reps.findIndex((r) => r.id === id);
+    if (idx !== -1) reps[idx] = { ...reps[idx], ...patch };
+    renderTable();
+    toast('Saved');
+  }
+
+  el('googleBtn').addEventListener('click', async () => {
+    clearError('loginError');
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + window.location.pathname,
+        queryParams: { hd: 'shift4.com' },
+      },
+    });
+    if (error) showError('loginError', error.message);
+  });
+
+  el('signOutBtn').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+  });
+
+  init();
+</script>
+
+</body>
+</html>
