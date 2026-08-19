@@ -27,7 +27,11 @@ const SHEET_ID = Deno.env.get('BULLPEN_SHEET_ID') ?? '1zYP1sKG4NYYnv5ojbUTfwlRNb
 const GOOGLE_SA_EMAIL = Deno.env.get('GOOGLE_SA_EMAIL')!;
 const GOOGLE_SA_PRIVATE_KEY = (Deno.env.get('GOOGLE_SA_PRIVATE_KEY') ?? '').replace(/\\n/g, '\n');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+// This project uses Supabase's newer key system, where the auto-injected
+// SUPABASE_SERVICE_ROLE_KEY doesn't reliably grant full access. EDGE_SERVICE_ROLE_KEY
+// is a custom secret (set manually from Project Settings -> API Keys -> service_role)
+// that we know works; SUPABASE_SERVICE_ROLE_KEY is kept as a fallback for older projects.
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('EDGE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 // Rank-based multiplier — ported from the old script's updateAutoMultiplier().
 const MIN_MULT = 0.75; // worst rank
@@ -101,14 +105,21 @@ Deno.serve(async () => {
     const today = new Date().toISOString().slice(0, 10);
     const summary = { leaderboard_rows: 0, multiplier_updates: 0, skipped_no_data: false, errors: [] as string[] };
 
-    // ---- The ONLY sheet read: Leaderboard!A2:G20 ----
+    // ---- The ONLY sheet read: Leaderboard!A2:G12 ----
     // Columns: name, connects, units, revenue, sql%, weighted score, rank.
-    const leaderboardRows = await fetchSheetRange(accessToken, 'Leaderboard!A2:G20');
+    // Bounded to row 12 (the "Total" row) deliberately: rows 18-29 hold a second,
+    // duplicate "SE LEADERBOARD" sorted display table (same tab, cols A-F) that
+    // would otherwise get scooped up too. The break-on-"Total" guard below is a
+    // second layer of protection in case the roster grows past row 11.
+    const leaderboardRows = await fetchSheetRange(accessToken, 'Leaderboard!A2:G12');
 
     const parsed: { name: string; connects: number; units: number; revenue: number; sqlRate: number; weightedScore: number; rank: number | null }[] = [];
     for (const row of leaderboardRows) {
       const [name, connects, units, revenue, sqlPct, weightedScore, rank] = row;
       if (!name) continue;
+      // Stop before the Total/Weightings summary rows and the duplicate sorted
+      // display table further down the same tab (both share this A2:G range).
+      if (['total', 'weightings'].includes(name.toLowerCase())) break;
       parsed.push({
         name,
         connects: Number(connects) || 0,
