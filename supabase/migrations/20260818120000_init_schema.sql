@@ -215,38 +215,50 @@ alter table routing_counters     enable row level security;
 alter table connects_history     enable row level security;
 
 -- user_roles: everyone can read their own role; only admins manage roles.
+drop policy if exists user_roles_self_select on user_roles;
 create policy user_roles_self_select on user_roles
   for select using (user_id = auth.uid() or is_admin());
+drop policy if exists user_roles_admin_write on user_roles;
 create policy user_roles_admin_write on user_roles
   for all using (is_admin()) with check (is_admin());
 
 -- reps: any signed-in shift4 user can read (leaderboard is meant to be visible);
 -- only admins can edit caps/weighting/flags. Multiplier is written by the ETL
 -- job via service_role, which bypasses this policy entirely.
+drop policy if exists reps_read_all on reps;
 create policy reps_read_all on reps
   for select using (auth.role() = 'authenticated');
+drop policy if exists reps_admin_write on reps;
 create policy reps_admin_write on reps
   for insert with check (is_admin());
+drop policy if exists reps_admin_update on reps;
 create policy reps_admin_update on reps
   for update using (is_admin()) with check (is_admin());
+drop policy if exists reps_admin_delete on reps;
 create policy reps_admin_delete on reps
   for delete using (is_admin());
 
 -- leaderboard_snapshot: read-only for everyone signed in; writes are service_role only.
+drop policy if exists leaderboard_read_all on leaderboard_snapshot;
 create policy leaderboard_read_all on leaderboard_snapshot
   for select using (auth.role() = 'authenticated');
 
 -- lead_queue: a BDR can see/create/update only their own rows; admins see all.
+drop policy if exists lead_queue_owner_select on lead_queue;
 create policy lead_queue_owner_select on lead_queue
   for select using (bdr_user_id = auth.uid() or is_admin());
+drop policy if exists lead_queue_owner_insert on lead_queue;
 create policy lead_queue_owner_insert on lead_queue
   for insert with check (bdr_user_id = auth.uid());
+drop policy if exists lead_queue_owner_update on lead_queue;
 create policy lead_queue_owner_update on lead_queue
   for update using (bdr_user_id = auth.uid() or is_admin());
 
 -- assignment_session: same ownership pattern as lead_queue.
+drop policy if exists session_owner_select on assignment_session;
 create policy session_owner_select on assignment_session
   for select using (bdr_user_id = auth.uid() or is_admin());
+drop policy if exists session_owner_update on assignment_session;
 create policy session_owner_update on assignment_session
   for update using (bdr_user_id = auth.uid() or is_admin());
 -- Inserts happen only inside the propose_assignment() function (security
@@ -255,13 +267,16 @@ create policy session_owner_update on assignment_session
 -- assignment_log: append-only ledger. Read access for everyone signed in;
 -- no update/delete policy exists for authenticated users at all — only
 -- service_role (which bypasses RLS) can write, via confirm_assignment().
+drop policy if exists audit_read_all on assignment_log;
 create policy audit_read_all on assignment_log
   for select using (auth.role() = 'authenticated');
 
 -- routing_counters / connects_history: read-only for authenticated users;
 -- writes are service_role only (Edge Functions).
+drop policy if exists counters_read_all on routing_counters;
 create policy counters_read_all on routing_counters
   for select using (auth.role() = 'authenticated');
+drop policy if exists connects_read_all on connects_history;
 create policy connects_read_all on connects_history
   for select using (auth.role() = 'authenticated');
 

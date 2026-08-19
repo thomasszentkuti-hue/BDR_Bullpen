@@ -1,0 +1,4 @@
+project_id = "tvrqhnklnmtrachqackj"
+
+[functions.sync-leaderboard-from-sheet]
+verify_jwt = false
