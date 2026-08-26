@@ -6,69 +6,122 @@
 <title>BDR Bullpen — Manager Panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --s4-black: #0a0a0a; --s4-blue: #146ef6; --s4-blue-d: #0f52c9;
-    --bg: #f3f5f9; --card: #ffffff; --border: #e4e7ec; --text: #0a0a0a;
-    --muted: #667085; --green: #16a34a; --green-d: #15803d;
-    --red: #dc2626; --red-d: #b91c1c; --amber: #f2994a; --amber-d: #c2660f;
+    --s4-black: #0a0a0a; --s4-blue: #146ef6; --s4-blue-d: #0f52c9; --s4-blue-l: #eef4ff;
+    --bg: #f2f5fb; --card: #ffffff; --border: #e6e9f0; --text: #0b0d12;
+    --muted: #6b7280; --muted-2: #9aa4b2;
+    --green: #16a34a; --green-d: #0f8a3c; --green-l: #eafcf1;
+    --red: #dc2626; --red-d: #b91c1c; --red-l: #fef2f2;
+    --amber: #f2994a; --amber-d: #c2660f; --amber-l: #fff6ed;
+    --shadow: 0 1px 2px rgba(16,24,40,.04), 0 12px 32px -8px rgba(16,24,40,.12);
   }
   * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100vh; }
   body {
-    margin: 0; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; background: var(--bg);
-    color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif; background: var(--bg);
+    color: var(--text); min-height: 100vh; display: flex; flex-direction: column;
+    position: relative; isolation: isolate; overflow-x: hidden;
   }
+  body::before, body::after {
+    content: ''; position: fixed; border-radius: 50%; filter: blur(10px); z-index: -1; pointer-events: none;
+  }
+  body::before { width: 620px; height: 620px; top: -260px; right: -220px; background: radial-gradient(circle, rgba(20,110,246,.14), rgba(20,110,246,0) 70%); }
+  body::after { width: 520px; height: 520px; bottom: -240px; left: -200px; background: radial-gradient(circle, rgba(20,110,246,.09), rgba(20,110,246,0) 70%); }
+
   header {
-    width: 100%; background: var(--s4-black); border-bottom: 1px solid #1a1a1a;
-    padding: 14px 24px; display: flex; justify-content: space-between; align-items: center;
+    width: 100%; background: var(--s4-black); position: relative; z-index: 2;
+    padding: 16px 28px; display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 1px 0 rgba(20,110,246,.35);
   }
-  .brand { display: flex; align-items: center; gap: 8px; }
+  .brand { display: flex; align-items: center; gap: 10px; }
   .brand .logo-word { font-family: 'Poppins', sans-serif; font-weight: 600; letter-spacing: .14em; font-size: 16px; color: #fff; }
   .brand .logo-4 {
     display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;
     border: 2px solid var(--s4-blue); border-radius: 50%; color: var(--s4-blue); font-weight: 700; font-size: 12px;
   }
-  .brand .brand-sub { font-size: 13px; color: #98a2b3; font-weight: 600; margin-left: 8px; padding-left: 10px; border-left: 1px solid #2b2b2b; }
-  .brand a.back { color: #98a2b3; font-weight: 600; font-size: 12px; text-decoration: underline; margin-left: 14px; }
-  header .who { font-size: 13px; color: #98a2b3; display: flex; align-items: center; gap: 12px; }
-  a.signout { color: #98a2b3; text-decoration: underline; cursor: pointer; font-size: 13px; }
-  main { width: 100%; max-width: 1100px; padding: 32px 20px; }
+  .brand .brand-sub { font-size: 13px; color: #98a2b3; font-weight: 600; margin-left: 6px; padding-left: 12px; border-left: 1px solid #26262a; }
+  .brand a.back { color: #98a2b3; font-weight: 600; font-size: 12.5px; text-decoration: none; margin-left: 16px; transition: color .15s; }
+  .brand a.back:hover { color: #fff; }
+  header .who { font-size: 13px; color: #98a2b3; display: flex; align-items: center; gap: 14px; }
+  header .who #whoEmail { color: #d0d5dd; font-weight: 500; }
+  a.signout { color: #98a2b3; text-decoration: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: color .15s; }
+  a.signout:hover { color: #fff; }
+
+  main { flex: 1; width: 100%; padding: 40px 24px; position: relative; z-index: 1; display: flex; justify-content: center; }
+  main.center-main { align-items: center; }
+  .stack { width: 100%; max-width: 420px; }
+  .stack-wide { width: 100%; max-width: 1080px; }
+
+  .kicker {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800;
+    color: var(--s4-blue); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px;
+  }
+  .kicker::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--s4-blue); }
+
   .card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-    padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,.05); margin-bottom: 16px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 36px 32px; box-shadow: var(--shadow); position: relative; overflow: hidden;
   }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, var(--s4-blue), #5b9bff);
+  }
+  .card.table-card { padding: 8px; }
+  .table-card .table-inner-header { padding: 28px 28px 20px; }
   .center { text-align: center; }
-  h1 { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 22px; margin: 0 0 8px; color: var(--text); }
-  p.sub { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
-  .btn { display: inline-block; padding: 11px 16px; font-size: 14px; font-weight: 700;
-    border: none; border-radius: 10px; cursor: pointer; transition: opacity .15s; font-family: inherit; }
-  .btn:hover { opacity: .92; }
-  .btn-google {
-    background: #fff; color: var(--text); border: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%;
+  h1 { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 24px; margin: 0 0 6px; color: var(--text); letter-spacing: -.01em; }
+  p.sub { color: var(--muted); font-size: 14.5px; line-height: 1.5; margin: 0 0 4px; }
+  .table-inner-header p.sub { margin-bottom: 0; }
+
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px;
+    font-size: 14.5px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer;
+    transition: opacity .15s, transform .05s, box-shadow .15s; font-family: inherit;
   }
-  .error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 14px; }
+  .btn:hover { opacity: .94; }
+  .btn-google { background: #fff; color: var(--text); border: 1.5px solid var(--border); font-weight: 600; }
+  .btn-google:hover { background: #fafbfc; border-color: #d7dbe3; }
+
+  .error {
+    background: var(--red-l); border: 1px solid #fecaca; color: #991b1b; padding: 12px 14px; border-radius: 12px;
+    font-size: 13px; font-weight: 500; margin: 16px 28px 0;
+  }
   .hidden { display: none !important; }
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th, td { padding: 12px 10px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; }
-  thead tr { background: #eef4ff; }
-  th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--s4-blue-d); font-weight: 700; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { padding: 14px 16px; text-align: left; vertical-align: middle; }
+  thead th { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 800; border-bottom: 1.5px solid var(--border); }
+  tbody tr { border-bottom: 1px solid #f0f2f6; transition: background .1s; }
+  tbody tr:hover { background: #fafbfd; }
+  tbody tr:last-child { border-bottom: none; }
+  td.name-cell { font-weight: 700; color: var(--text); }
   td input[type="number"] {
-    width: 90px; padding: 7px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit;
+    width: 92px; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 9px; font-size: 13px;
+    font-family: inherit; font-weight: 600; transition: border-color .15s, box-shadow .15s;
   }
-  td input[type="number"]:focus { outline: none; border-color: var(--s4-blue); box-shadow: 0 0 0 3px rgba(20,110,246,.15); }
+  td input[type="number"]:focus { outline: none; border-color: var(--s4-blue); box-shadow: 0 0 0 3px rgba(20,110,246,.14); }
+  input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--s4-blue); cursor: pointer; }
+
   .status-btn {
-    padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); font-weight: 700;
-    font-size: 12px; cursor: pointer; background: #fff; color: var(--muted); font-family: inherit;
+    padding: 7px 16px; border-radius: 999px; border: 1.5px solid var(--border); font-weight: 800;
+    font-size: 11.5px; letter-spacing: .03em; cursor: pointer; background: #fff; color: var(--muted);
+    font-family: inherit; transition: all .15s;
   }
-  .status-btn.in { background: #dcfce7; border-color: #86efac; color: var(--green-d); }
-  .status-btn.out { background: #fee2e2; border-color: #fecaca; color: var(--red-d); }
-  .badge-raincheck { background: #fff7ed; border: 1px solid #fed7aa; color: var(--amber-d); padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
-  .link-btn { background: none; border: none; color: var(--s4-blue); text-decoration: underline; cursor: pointer; font-size: 12px; padding: 0; font-family: inherit; }
+  .status-btn.in { background: var(--green-l); border-color: #bbf0d1; color: var(--green-d); }
+  .status-btn.out { background: var(--red-l); border-color: #fecaca; color: var(--red-d); }
+  .badge-raincheck { background: var(--amber-l); border: 1px solid #fed7aa; color: var(--amber-d); padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .link-btn { background: none; border: none; color: var(--s4-blue); cursor: pointer; font-size: 12px; font-weight: 700; padding: 0; font-family: inherit; }
+  .link-btn:hover { text-decoration: underline; }
   .row-saving { opacity: .5; }
-  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--s4-black); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
-  .toast.show { opacity: 1; }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; background: var(--s4-black); color: #fff; padding: 12px 18px;
+    border-radius: 12px; font-size: 13px; font-weight: 600; opacity: 0; transform: translateY(8px);
+    transition: opacity .2s, transform .2s; pointer-events: none; box-shadow: var(--shadow);
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
   .toast.error { background: var(--red-d); }
 </style>
 </head>
@@ -86,42 +139,56 @@
   </div>
 </header>
 
-<main>
+<main id="mainEl">
 
   <!-- LOGIN VIEW -->
-  <div id="loginView" class="card center hidden">
-    <h1>Manager sign-in</h1>
-    <p class="sub">shift4.com Google accounts only.</p>
-    <button class="btn btn-google" id="googleBtn">Sign in with Google</button>
-    <div id="loginError" class="error hidden" style="margin-top:14px"></div>
+  <div id="loginView" class="stack hidden">
+    <div class="card center">
+      <div class="kicker">Manager Access</div>
+      <h1>Manager sign-in</h1>
+      <p class="sub" style="margin-bottom:26px">shift4.com Google accounts only.</p>
+      <button class="btn btn-google" id="googleBtn">
+        <svg viewBox="0 0 48 48" width="18" height="18"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.6 32.9 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.5 29.6 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.5 29.6 4.5 24 4.5c-7.7 0-14.4 4.4-17.7 10.2z"/><path fill="#4CAF50" d="M24 43.5c5.5 0 10.4-1.9 14.1-5.1l-6.5-5.5c-2 1.5-4.6 2.4-7.6 2.4-5.2 0-9.6-3.1-11.3-7.6l-6.6 5.1C9.5 39 16.2 43.5 24 43.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.5 5.5C41.5 36 43.5 30.4 43.5 24c0-1.2-.1-2.4-.4-3.5z"/></svg>
+        Sign in with Google
+      </button>
+      <div id="loginError" class="error hidden" style="margin:14px 0 0"></div>
+    </div>
   </div>
 
   <!-- UNAUTHORIZED VIEW -->
-  <div id="unauthorizedView" class="card center hidden">
-    <h1>Not authorized</h1>
-    <p class="sub">Your account doesn't have manager access to this panel. Ask whoever administers the Bullpen app to grant you the admin role.</p>
+  <div id="unauthorizedView" class="stack hidden">
+    <div class="card center">
+      <div class="kicker">Manager Access</div>
+      <h1>Not authorized</h1>
+      <p class="sub">Your account doesn't have manager access to this panel. Ask whoever administers the Bullpen app to grant you the admin role.</p>
+    </div>
   </div>
 
   <!-- PANEL VIEW -->
-  <div id="panelView" class="card hidden">
-    <h1>Rep roster</h1>
-    <p class="sub">Changes save automatically.</p>
-    <div id="panelError" class="error hidden"></div>
-    <div style="overflow-x:auto">
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Bullpen</th>
-            <th>Min cap</th>
-            <th>Max cap</th>
-            <th>Dine eligible</th>
-            <th>Dials only</th>
-            <th>Raincheck</th>
-          </tr>
-        </thead>
-        <tbody id="repsBody"></tbody>
-      </table>
+  <div id="panelView" class="stack-wide hidden">
+    <div class="card table-card">
+      <div class="table-inner-header">
+        <div class="kicker">Roster</div>
+        <h1>Rep roster</h1>
+        <p class="sub">Changes save automatically.</p>
+      </div>
+      <div id="panelError" class="error hidden"></div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Bullpen</th>
+              <th>Min cap</th>
+              <th>Max cap</th>
+              <th>Dine eligible</th>
+              <th>Dials only</th>
+              <th>Raincheck</th>
+            </tr>
+          </thead>
+          <tbody id="repsBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -141,6 +208,7 @@
   function showView(name) {
     Object.values(views).forEach((v) => v.classList.add('hidden'));
     views[name].classList.remove('hidden');
+    el('mainEl').classList.toggle('center-main', name !== 'panel');
   }
   function showError(boxId, message) {
     const box = el(boxId);
@@ -209,6 +277,7 @@
       tr.dataset.id = rep.id;
 
       const nameTd = document.createElement('td');
+      nameTd.className = 'name-cell';
       nameTd.textContent = rep.full_name ? `${rep.name} (${rep.full_name})` : rep.name;
       tr.appendChild(nameTd);
 
