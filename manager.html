@@ -344,6 +344,31 @@
       </div>
     </div>
 
+    <div class="card table-card" style="margin-top: 24px">
+      <div class="table-inner-header">
+        <div>
+          <div class="kicker">History</div>
+          <h1>Assignment audit log</h1>
+          <p class="sub">Most recent confirmed / recalled leads, newest first.</p>
+        </div>
+      </div>
+      <div id="auditError" class="error hidden"></div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Rep</th>
+              <th>Route method</th>
+              <th>BDR</th>
+              <th>TTV</th>
+            </tr>
+          </thead>
+          <tbody id="auditBody"></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 
 </main>
@@ -411,7 +436,7 @@
       return;
     }
 
-    await Promise.all([loadReps(), loadOdds()]);
+    await Promise.all([loadReps(), loadOdds(), loadAuditLog()]);
     showView('panel');
   }
 
@@ -448,6 +473,46 @@
         td.textContent = val;
         tr.appendChild(td);
       });
+      body.appendChild(tr);
+    }
+  }
+
+  // ---- Audit log: most recent assignment_log rows, joined to rep name ----
+  async function loadAuditLog() {
+    clearError('auditError');
+    const { data, error } = await supabase
+      .from('assignment_log')
+      .select('created_at, route_method, bdr_email, ttv, reps(name)')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) { showError('auditError', error.message); return; }
+
+    const body = el('auditBody');
+    body.innerHTML = '';
+    for (const row of data || []) {
+      const tr = document.createElement('tr');
+      const cells = [
+        new Date(row.created_at).toLocaleString(),
+        row.reps ? row.reps.name : '—',
+        row.route_method || '—',
+        row.bdr_email || '—',
+        '$' + Number(row.ttv || 0).toLocaleString(),
+      ];
+      cells.forEach((val, i) => {
+        const td = document.createElement('td');
+        if (i === 1) td.className = 'name-cell';
+        td.textContent = val;
+        tr.appendChild(td);
+      });
+      body.appendChild(tr);
+    }
+    if (!data || !data.length) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 5;
+      td.textContent = 'No assignments logged yet.';
+      td.style.color = 'var(--ink-3)';
+      tr.appendChild(td);
       body.appendChild(tr);
     }
   }
