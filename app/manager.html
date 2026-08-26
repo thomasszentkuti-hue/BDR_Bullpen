@@ -461,7 +461,7 @@
 
       const nameTd = document.createElement('td');
       nameTd.className = 'name-cell';
-      nameTd.textContent = rep.full_name ? `${rep.name} (${rep.full_name})` : rep.name;
+      nameTd.textContent = rep.full_name || rep.name;
       tr.appendChild(nameTd);
 
       const statusTd = document.createElement('td');
