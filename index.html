@@ -4,67 +4,84 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>BDR Bullpen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; --text: #1e293b;
-    --muted: #64748b; --accent: #0284c7; --green: #16a34a; --green-d: #15803d;
-    --red: #dc2626; --red-d: #b91c1c; --amber: #f2994a; --amber-d: #e08532;
+    --s4-black: #0a0a0a; --s4-blue: #146ef6; --s4-blue-d: #0f52c9;
+    --bg: #f3f5f9; --card: #ffffff; --border: #e4e7ec; --text: #0a0a0a;
+    --muted: #667085; --green: #16a34a; --green-d: #15803d;
+    --red: #dc2626; --red-d: #b91c1c; --amber: #f2994a; --amber-d: #c2660f;
   }
   * { box-sizing: border-box; }
   body {
-    margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg);
+    margin: 0; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; background: var(--bg);
     color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center;
   }
   header {
-    width: 100%; background: #fff; border-bottom: 1px solid var(--border);
+    width: 100%; background: var(--s4-black); border-bottom: 1px solid #1a1a1a;
     padding: 14px 24px; display: flex; justify-content: space-between; align-items: center;
   }
-  header .brand { font-weight: 800; color: var(--accent); font-size: 18px; }
-  header .who { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 8px; }
+  .brand .logo-word { font-family: 'Poppins', sans-serif; font-weight: 600; letter-spacing: .14em; font-size: 16px; color: #fff; }
+  .brand .logo-4 {
+    display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;
+    border: 2px solid var(--s4-blue); border-radius: 50%; color: var(--s4-blue); font-weight: 700; font-size: 12px;
+  }
+  .brand .brand-sub { font-size: 13px; color: #98a2b3; font-weight: 600; margin-left: 8px; padding-left: 10px; border-left: 1px solid #2b2b2b; }
+  header .who { font-size: 13px; color: #98a2b3; display: flex; align-items: center; gap: 12px; }
   main { width: 100%; max-width: 480px; padding: 32px 20px; }
   .card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
     padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,.05); margin-bottom: 16px;
   }
   .center { text-align: center; }
-  h1 { font-size: 22px; margin: 0 0 8px; }
+  h1 { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 22px; margin: 0 0 8px; color: var(--text); }
   p.sub { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
-  label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .03em; }
+  label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .04em; }
   input[type="number"] {
-    width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px;
+    width: 100%; padding: 11px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 16px;
+    font-family: inherit; background: #fff; color: var(--text);
   }
+  input[type="number"]:focus { outline: none; border-color: var(--s4-blue); box-shadow: 0 0 0 3px rgba(20,110,246,.15); }
   .toggle-row { display: flex; gap: 8px; }
   .toggle-row button {
-    flex: 1; padding: 10px; border: 1px solid var(--border); background: #fff; border-radius: 8px;
-    font-size: 14px; font-weight: 600; cursor: pointer; color: var(--muted);
+    flex: 1; padding: 10px; border: 1px solid var(--border); background: #fff; border-radius: 10px;
+    font-size: 14px; font-weight: 700; cursor: pointer; color: var(--muted); font-family: inherit;
   }
-  .toggle-row button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .btn { display: block; width: 100%; padding: 12px; margin: 8px 0; font-size: 14px; font-weight: 700;
-    border: none; border-radius: 8px; cursor: pointer; transition: opacity .15s; }
-  .btn:hover { opacity: .9; }
+  .toggle-row button.active { background: var(--s4-blue); border-color: var(--s4-blue); color: #fff; }
+  .btn { display: block; width: 100%; padding: 13px; margin: 8px 0; font-size: 14px; font-weight: 700;
+    border: none; border-radius: 10px; cursor: pointer; transition: opacity .15s, transform .05s; font-family: inherit; }
+  .btn:hover { opacity: .92; }
+  .btn:active { transform: scale(.99); }
   .btn:disabled { opacity: .5; cursor: not-allowed; }
-  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary { background: var(--s4-blue); color: #fff; }
+  .btn-primary:hover { background: var(--s4-blue-d); opacity: 1; }
   .btn-yes { background: var(--green); color: #fff; }
   .btn-no { background: var(--red); color: #fff; }
   .btn-recall { background: var(--amber); color: #fff; }
   .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
   .btn-google {
-    background: #fff; color: #1e293b; border: 1px solid var(--border);
+    background: #fff; color: var(--text); border: 1px solid var(--border);
     display: flex; align-items: center; justify-content: center; gap: 10px;
   }
-  .meta { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; text-align: center; }
-  .rep-name { font-size: 30px; font-weight: 800; color: var(--accent); text-align: center; margin: 8px 0; }
+  .meta { font-size: 11px; font-weight: 800; color: var(--s4-blue); text-transform: uppercase; letter-spacing: .06em; text-align: center; }
+  .rep-name { font-family: 'Poppins', sans-serif; font-size: 30px; font-weight: 800; color: var(--text); text-align: center; margin: 8px 0; }
   .volume { text-align: center; font-size: 14px; color: var(--muted); margin-bottom: 16px; }
-  .error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; }
-  .success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 14px; border-radius: 8px; font-size: 14px; text-align: center; }
+  .error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 14px; }
+  .success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 14px; border-radius: 10px; font-size: 14px; text-align: center; }
   .hidden { display: none !important; }
-  a.signout { color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 13px; }
+  a.signout { color: #98a2b3; text-decoration: underline; cursor: pointer; font-size: 13px; }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="brand">BDR Bullpen</div>
+  <div class="brand">
+    <span class="logo-word">SHIFT</span><span class="logo-4">4</span>
+    <span class="brand-sub">Bullpen</span>
+  </div>
   <div class="who hidden" id="whoBox">
     <span id="whoEmail"></span>
     <a class="signout" id="signOutBtn">Sign out</a>
