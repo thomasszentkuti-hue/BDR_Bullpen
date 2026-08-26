@@ -305,7 +305,6 @@
               <th>Min cap</th>
               <th>Max cap</th>
               <th>Dine eligible</th>
-              <th>Dials only</th>
               <th>Raincheck</th>
             </tr>
           </thead>
@@ -435,14 +434,6 @@
       dineCb.addEventListener('change', () => updateRep(rep.id, { dine_eligible: dineCb.checked }));
       dineTd.appendChild(dineCb);
       tr.appendChild(dineTd);
-
-      const dialsTd = document.createElement('td');
-      const dialsCb = document.createElement('input');
-      dialsCb.type = 'checkbox';
-      dialsCb.checked = rep.dials_only;
-      dialsCb.addEventListener('change', () => updateRep(rep.id, { dials_only: dialsCb.checked }));
-      dialsTd.appendChild(dialsCb);
-      tr.appendChild(dialsTd);
 
       const rainTd = document.createElement('td');
       const rainBtn = document.createElement('button');
