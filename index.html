@@ -82,6 +82,11 @@
   header .who #whoEmail { color: var(--ink-1); font-weight: 500; }
   a.signout { color: var(--ink-3); text-decoration: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: color .15s; }
   a.signout:hover { color: #fff; }
+  a.manager-link {
+    color: var(--s4-line); text-decoration: none; cursor: pointer; font-size: 13px; font-weight: 700;
+    border: 1px solid rgba(88,170,253,.35); border-radius: 999px; padding: 5px 12px; transition: all .15s;
+  }
+  a.manager-link:hover { background: rgba(88,170,253,.12); color: #fff; }
 
   /* ================= LAYOUT ================= */
   main {
@@ -290,6 +295,7 @@
     <span class="brand-sub">Bullpen</span>
   </div>
   <div class="who hidden" id="whoBox">
+    <a class="manager-link hidden" id="managerLink" href="./manager.html">Manager Panel</a>
     <span id="whoEmail"></span>
     <a class="signout" id="signOutBtn">Sign out</a>
   </div>
@@ -415,7 +421,19 @@
     const { data } = await supabase.auth.getSession();
     session = data.session;
     render();
-    supabase.auth.onAuthStateChange((_event, s) => { session = s; render(); });
+    updateManagerLinkVisibility();
+    supabase.auth.onAuthStateChange((_event, s) => {
+      session = s;
+      render();
+      updateManagerLinkVisibility();
+    });
+  }
+
+  async function updateManagerLinkVisibility() {
+    const link = el('managerLink');
+    if (!session) { link.classList.add('hidden'); return; }
+    const { data } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id).maybeSingle();
+    link.classList.toggle('hidden', !(data && data.role === 'admin'));
   }
 
   function render() {
