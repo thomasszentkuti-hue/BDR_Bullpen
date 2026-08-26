@@ -9,29 +9,58 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --s4-black: #0a0a0a; --s4-blue: #146ef6; --s4-blue-d: #0f52c9; --s4-blue-l: #eef4ff;
-    --bg: #f2f5fb; --card: #ffffff; --border: #e6e9f0; --text: #0b0d12;
+    --s4-black: #000000; --s4-navy: #0a1220; --s4-blue: #146ef6; --s4-blue-d: #0f52c9; --s4-blue-l: #eef4ff;
+    --s4-line: #58aafd; --s4-ring-1: #041938; --s4-ring-2: #010c1c;
+    --card: #ffffff; --border: #e6e9f0; --text: #0b0d12;
     --muted: #6b7280; --muted-2: #9aa4b2;
     --green: #16a34a; --green-d: #0f8a3c; --green-l: #eafcf1;
     --red: #dc2626; --red-d: #b91c1c; --red-l: #fef2f2;
     --amber: #f2994a; --amber-d: #c2660f; --amber-l: #fff6ed;
-    --shadow: 0 1px 2px rgba(16,24,40,.04), 0 12px 32px -8px rgba(16,24,40,.12);
+    --shadow: 0 1px 2px rgba(16,24,40,.04), 0 20px 44px -8px rgba(0,0,0,.45);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; min-height: 100vh; }
   body {
-    font-family: 'Inter', 'Segoe UI', Arial, sans-serif; background: var(--bg);
-    color: var(--text); min-height: 100vh; display: flex; flex-direction: column;
-    position: relative; isolation: isolate; overflow-x: hidden;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif; color: var(--text);
+    min-height: 100vh; display: flex; flex-direction: column; position: relative;
+    isolation: isolate; overflow-x: hidden;
+    background: radial-gradient(ellipse 1200px 900px at 78% -10%, #0d1c33 0%, #060a12 48%, #000 100%);
   }
-  body::before, body::after {
-    content: ''; position: fixed; border-radius: 50%; filter: blur(10px); z-index: -1; pointer-events: none;
+
+  /* ---- ambient globe decoration ---- */
+  .globe-decor { position: fixed; top: -160px; right: -180px; width: 640px; height: 640px; z-index: -1; pointer-events: none; }
+  .globe-decor .ring { position: absolute; top: 50%; left: 50%; border-radius: 50%; transform: translate(-50%, -50%); }
+  .ring-a { width: 640px; height: 640px; background: radial-gradient(circle, transparent 54%, var(--s4-ring-1) 60%, transparent 68%); }
+  .ring-b { width: 500px; height: 500px; background: radial-gradient(circle, transparent 54%, var(--s4-ring-2) 62%, transparent 72%); opacity: .8; }
+  .ring-c { width: 400px; height: 400px; background: radial-gradient(circle, rgba(20,110,246,.28), transparent 70%); filter: blur(4px); }
+  .globe-sphere {
+    position: absolute; top: 50%; left: 50%; width: 330px; height: 330px; border-radius: 50%;
+    transform: translate(-50%, -50%); overflow: hidden;
+    background: radial-gradient(circle at 32% 28%, #0e2038, #030712 72%);
+    box-shadow: 0 0 80px 6px rgba(20,110,246,.22), inset -30px -24px 60px rgba(0,0,0,.65), inset 0 0 30px rgba(0,0,0,.4);
   }
-  body::before { width: 620px; height: 620px; top: -260px; right: -220px; background: radial-gradient(circle, rgba(20,110,246,.14), rgba(20,110,246,0) 70%); }
-  body::after { width: 520px; height: 520px; bottom: -240px; left: -200px; background: radial-gradient(circle, rgba(20,110,246,.09), rgba(20,110,246,0) 70%); }
+  .globe-sphere::before {
+    content: ''; position: absolute; inset: -30% -60%;
+    background-image:
+      repeating-linear-gradient(90deg, rgba(88,170,253,.4) 0 2px, transparent 2px 44px),
+      repeating-linear-gradient(0deg, rgba(88,170,253,.2) 0 1px, transparent 1px 38px);
+    animation: globeDrift 24s linear infinite; mix-blend-mode: screen;
+  }
+  .globe-sphere::after {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(88,170,253,.55) 1px, transparent 1.6px);
+    background-size: 13px 13px; opacity: .55;
+    -webkit-mask-image: radial-gradient(circle at 35% 30%, black 40%, transparent 78%);
+            mask-image: radial-gradient(circle at 35% 30%, black 40%, transparent 78%);
+    animation: globeDrift 34s linear infinite reverse;
+  }
+  @keyframes globeDrift { from { background-position: 0 0; } to { background-position: -260px 0; } }
+  @media (prefers-reduced-motion: reduce) { .globe-sphere::before, .globe-sphere::after { animation: none; } }
+  .glow-soft { position: fixed; width: 480px; height: 480px; bottom: -220px; left: -200px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(20,110,246,.10), transparent 70%); z-index: -1; pointer-events: none; filter: blur(6px); }
 
   header {
-    width: 100%; background: var(--s4-black); position: relative; z-index: 2;
+    width: 100%; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); position: relative; z-index: 2;
     padding: 16px 28px; display: flex; justify-content: space-between; align-items: center;
     box-shadow: 0 1px 0 rgba(20,110,246,.35);
   }
@@ -126,6 +155,14 @@
 </style>
 </head>
 <body>
+
+<div class="globe-decor" aria-hidden="true">
+  <div class="ring ring-a"></div>
+  <div class="ring ring-b"></div>
+  <div class="ring ring-c"></div>
+  <div class="globe-sphere"></div>
+</div>
+<div class="glow-soft" aria-hidden="true"></div>
 
 <header>
   <div class="brand">
