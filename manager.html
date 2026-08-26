@@ -35,17 +35,9 @@
     z-index: -1; pointer-events: none; opacity: .55;
   }
   .globe-wrap svg { width: 100%; height: 100%; display: block; }
-  .dots-scroll { animation: dotsDrift 40s linear infinite; }
-  @keyframes dotsDrift { from { transform: translateX(0); } to { transform: translateX(-288px); } }
-  .flow { stroke-dasharray: 3 14; animation: dashFlow 9s linear infinite; }
-  .flow.slow { animation-duration: 14s; }
-  .flow.rev { animation-direction: reverse; }
-  @keyframes dashFlow { to { stroke-dashoffset: -340; } }
-  .node { animation: nodePulse 5s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
-  .node.d1 { animation-delay: 1.2s; } .node.d2 { animation-delay: 2.4s; }
-  .node.d3 { animation-delay: 3.4s; } .node.d4 { animation-delay: 4.2s; }
-  @keyframes nodePulse { 0%,100% { opacity: .35; } 50% { opacity: 1; } }
-  @media (prefers-reduced-motion: reduce) { .dots-scroll, .flow, .node { animation: none; } }
+  /* Static now, not animated — the continuous repaint behind the dashboard
+     cards was the main source of the lag. */
+  .node { opacity: .7; }
   .glow-corner {
     position: fixed; width: 560px; height: 560px; bottom: -260px; left: -240px; border-radius: 50%;
     background: radial-gradient(circle, rgba(20,110,246,.12), transparent 70%); z-index: -1;
@@ -351,32 +343,6 @@
       </div>
     </div>
 
-    <div class="card table-card" style="margin-top: 24px">
-      <div class="table-inner-header">
-        <div>
-          <div class="kicker">Performance</div>
-          <h1>Latest connects &amp; leaderboard</h1>
-          <p class="sub" id="perfDateLabel">Most recent synced report date.</p>
-        </div>
-      </div>
-      <div id="perfError" class="error hidden"></div>
-      <div style="overflow-x:auto">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Connects</th>
-              <th>Units</th>
-              <th>Revenue</th>
-              <th>SQL %</th>
-              <th>Rank</th>
-            </tr>
-          </thead>
-          <tbody id="perfBody"></tbody>
-        </table>
-      </div>
-    </div>
-
   </div>
 
 </main>
@@ -444,7 +410,7 @@
       return;
     }
 
-    await Promise.all([loadReps(), loadOdds(), loadPerformance()]);
+    await Promise.all([loadReps(), loadOdds()]);
     showView('panel');
   }
 
@@ -474,52 +440,6 @@
         Number(row.multiplier ?? 0).toFixed(2),
         Number(row.weighting ?? 0).toFixed(2),
         row.odds != null ? (Number(row.odds) * 100).toFixed(1) + '%' : '—',
-      ];
-      cells.forEach((val, i) => {
-        const td = document.createElement('td');
-        if (i === 0) td.className = 'name-cell';
-        td.textContent = val;
-        tr.appendChild(td);
-      });
-      body.appendChild(tr);
-    }
-  }
-
-  // ---- Performance: latest leaderboard_snapshot date, joined to rep name ----
-  async function loadPerformance() {
-    clearError('perfError');
-    const { data: latest, error: dateErr } = await supabase
-      .from('leaderboard_snapshot')
-      .select('report_date')
-      .order('report_date', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (dateErr) { showError('perfError', dateErr.message); return; }
-    if (!latest) {
-      el('perfDateLabel').textContent = 'No leaderboard data synced yet.';
-      el('perfBody').innerHTML = '';
-      return;
-    }
-    el('perfDateLabel').textContent = 'Report date: ' + latest.report_date;
-
-    const { data, error } = await supabase
-      .from('leaderboard_snapshot')
-      .select('connects, units_closed, revenue_closed, sql_rate, rank, reps(name)')
-      .eq('report_date', latest.report_date)
-      .order('rank', { ascending: true, nullsFirst: false });
-    if (error) { showError('perfError', error.message); return; }
-
-    const body = el('perfBody');
-    body.innerHTML = '';
-    for (const row of data || []) {
-      const tr = document.createElement('tr');
-      const cells = [
-        row.reps ? row.reps.name : '—',
-        row.connects ?? 0,
-        row.units_closed ?? 0,
-        '$' + Number(row.revenue_closed ?? 0).toLocaleString(),
-        (Number(row.sql_rate ?? 0) * 100).toFixed(1) + '%',
-        row.rank ?? '—',
       ];
       cells.forEach((val, i) => {
         const td = document.createElement('td');

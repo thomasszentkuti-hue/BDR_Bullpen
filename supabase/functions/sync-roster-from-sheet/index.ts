@@ -95,7 +95,21 @@ async function fetchSheetRange(accessToken: string, range: string): Promise<stri
 // -----------------------------------------------------------------------------
 // Main handler
 // -----------------------------------------------------------------------------
+// This is called via supabase.functions.invoke() from the browser (a
+// cross-origin POST with an Authorization header), which means the browser
+// sends a CORS preflight (OPTIONS) first. Without these headers, the browser
+// blocks the real request before it ever reaches this function — that's the
+// "Failed to send a request to the Edge Function" error, not a server bug.
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: CORS_HEADERS });
+  }
   try {
     // ---- Admin gate ----
     // Explicitly verify the caller's bearer token via the auth API (not just
@@ -105,11 +119,11 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     if (!token) {
-      return new Response(JSON.stringify({ error: 'Not signed in.' }), { status: 401 });
+      return new Response(JSON.stringify({ error: 'Not signed in.' }), { status: 401, headers: CORS_HEADERS });
     }
     const { data: userData, error: userErr } = await admin.auth.getUser(token);
     if (userErr || !userData?.user) {
-      return new Response(JSON.stringify({ error: 'Not signed in.' }), { status: 401 });
+      return new Response(JSON.stringify({ error: 'Not signed in.' }), { status: 401, headers: CORS_HEADERS });
     }
 
     const { data: roleRow } = await admin
@@ -118,7 +132,7 @@ Deno.serve(async (req) => {
       .eq('user_id', userData.user.id)
       .maybeSingle();
     if (!roleRow || roleRow.role !== 'admin') {
-      return new Response(JSON.stringify({ error: 'Admin role required.' }), { status: 403 });
+      return new Response(JSON.stringify({ error: 'Admin role required.' }), { status: 403, headers: CORS_HEADERS });
     }
 
     // ---- Read Settings tab: name (A), bullpen (F), min cap (G), max cap (H),
@@ -184,9 +198,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify(summary), { headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify(summary), { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } });
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } });
   }
 });
