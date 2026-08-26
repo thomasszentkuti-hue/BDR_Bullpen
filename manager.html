@@ -108,7 +108,17 @@
     background: linear-gradient(90deg, transparent, var(--s4-blue) 30%, #5b9bff 70%, transparent);
   }
   .card.table-card { padding: 10px; }
-  .table-card .table-inner-header { padding: 30px 28px 20px; }
+  .table-card .table-inner-header {
+    padding: 30px 28px 20px; display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+  .btn-sync {
+    width: auto; padding: 10px 18px; background: rgba(88,170,253,.12); border: 1px solid rgba(88,170,253,.4);
+    color: var(--s4-line); font-size: 13px; white-space: nowrap; margin: 0;
+  }
+  .btn-sync:hover { background: rgba(88,170,253,.2); opacity: 1; }
+  .btn-sync:disabled { opacity: .5; cursor: not-allowed; }
+  .empty-note { color: var(--ink-3); font-size: 13px; padding: 4px 28px 24px; }
   .center { text-align: center; }
   h1 { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 25px; margin: 0 0 6px; color: var(--ink-0); letter-spacing: -.01em; }
   p.sub { color: var(--ink-2); font-size: 14.5px; line-height: 1.55; margin: 0 0 4px; }
@@ -289,11 +299,15 @@
 
   <!-- PANEL VIEW -->
   <div id="panelView" class="stack-wide hidden">
+
     <div class="card table-card">
       <div class="table-inner-header">
-        <div class="kicker">Roster</div>
-        <h1>Rep roster</h1>
-        <p class="sub">Changes save automatically.</p>
+        <div>
+          <div class="kicker">Roster</div>
+          <h1>Rep roster</h1>
+          <p class="sub">Changes save automatically. Archived reps are hidden here.</p>
+        </div>
+        <button class="btn btn-sync" id="syncRosterBtn">Sync from Sheet</button>
       </div>
       <div id="panelError" class="error hidden"></div>
       <div style="overflow-x:auto">
@@ -312,6 +326,58 @@
         </table>
       </div>
     </div>
+
+    <div class="card table-card" style="margin-top: 24px">
+      <div class="table-inner-header">
+        <div>
+          <div class="kicker">Odds</div>
+          <h1>Weighting &amp; odds</h1>
+          <p class="sub">Live from the same view the lottery draws from — read-only.</p>
+        </div>
+      </div>
+      <div id="oddsError" class="error hidden"></div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Rank</th>
+              <th>Multiplier</th>
+              <th>Weighting</th>
+              <th>Odds</th>
+            </tr>
+          </thead>
+          <tbody id="oddsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card table-card" style="margin-top: 24px">
+      <div class="table-inner-header">
+        <div>
+          <div class="kicker">Performance</div>
+          <h1>Latest connects &amp; leaderboard</h1>
+          <p class="sub" id="perfDateLabel">Most recent synced report date.</p>
+        </div>
+      </div>
+      <div id="perfError" class="error hidden"></div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Connects</th>
+              <th>Units</th>
+              <th>Revenue</th>
+              <th>SQL %</th>
+              <th>Rank</th>
+            </tr>
+          </thead>
+          <tbody id="perfBody"></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 
 </main>
@@ -379,16 +445,91 @@
       return;
     }
 
-    await loadReps();
+    await Promise.all([loadReps(), loadOdds(), loadPerformance()]);
     showView('panel');
   }
 
   async function loadReps() {
     clearError('panelError');
-    const { data, error } = await supabase.from('reps').select('*').order('name');
+    const { data, error } = await supabase.from('reps').select('*').eq('archived', false).order('name');
     if (error) { showError('panelError', error.message); return; }
     reps = data || [];
     renderTable();
+  }
+
+  // ---- Odds & weighting (read-only, straight from rep_odds) ----
+  async function loadOdds() {
+    clearError('oddsError');
+    const { data, error } = await supabase
+      .from('rep_odds')
+      .select('*')
+      .order('rank', { ascending: true, nullsFirst: false });
+    if (error) { showError('oddsError', error.message); return; }
+    const body = el('oddsBody');
+    body.innerHTML = '';
+    for (const row of data || []) {
+      const tr = document.createElement('tr');
+      const cells = [
+        row.name,
+        row.rank ?? '—',
+        Number(row.multiplier ?? 0).toFixed(2),
+        Number(row.weighting ?? 0).toFixed(2),
+        row.odds != null ? (Number(row.odds) * 100).toFixed(1) + '%' : '—',
+      ];
+      cells.forEach((val, i) => {
+        const td = document.createElement('td');
+        if (i === 0) td.className = 'name-cell';
+        td.textContent = val;
+        tr.appendChild(td);
+      });
+      body.appendChild(tr);
+    }
+  }
+
+  // ---- Performance: latest leaderboard_snapshot date, joined to rep name ----
+  async function loadPerformance() {
+    clearError('perfError');
+    const { data: latest, error: dateErr } = await supabase
+      .from('leaderboard_snapshot')
+      .select('report_date')
+      .order('report_date', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (dateErr) { showError('perfError', dateErr.message); return; }
+    if (!latest) {
+      el('perfDateLabel').textContent = 'No leaderboard data synced yet.';
+      el('perfBody').innerHTML = '';
+      return;
+    }
+    el('perfDateLabel').textContent = 'Report date: ' + latest.report_date;
+
+    const { data, error } = await supabase
+      .from('leaderboard_snapshot')
+      .select('connects, units_closed, revenue_closed, sql_rate, rank, reps(name)')
+      .eq('report_date', latest.report_date)
+      .order('rank', { ascending: true, nullsFirst: false });
+    if (error) { showError('perfError', error.message); return; }
+
+    const body = el('perfBody');
+    body.innerHTML = '';
+    for (const row of data || []) {
+      const tr = document.createElement('tr');
+      const cells = [
+        row.reps ? row.reps.name : '—',
+        row.connects ?? 0,
+        row.units_closed ?? 0,
+        '$' + Number(row.revenue_closed ?? 0).toLocaleString(),
+        (Number(row.sql_rate ?? 0) * 100).toFixed(1) + '%',
+        row.rank ?? '—',
+      ];
+      cells.forEach((val, i) => {
+        const td = document.createElement('td');
+        if (i === 0) td.className = 'name-cell';
+        td.textContent = val;
+        tr.appendChild(td);
+      });
+      body.appendChild(tr);
+    }
   }
 
   function renderTable() {
@@ -477,6 +618,28 @@
 
   el('signOutBtn').addEventListener('click', async () => {
     await supabase.auth.signOut();
+  });
+
+  el('syncRosterBtn').addEventListener('click', async () => {
+    const btn = el('syncRosterBtn');
+    btn.disabled = true;
+    btn.textContent = 'Syncing…';
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-roster-from-sheet');
+      if (error) throw error;
+      const parts = [];
+      if (data.added?.length) parts.push('Added: ' + data.added.join(', '));
+      if (data.unarchived?.length) parts.push('Restored: ' + data.unarchived.join(', '));
+      if (data.archived?.length) parts.push('Archived: ' + data.archived.join(', '));
+      if (data.errors?.length) parts.push('Errors: ' + data.errors.join('; '));
+      toast(parts.length ? parts.join(' · ') : 'No roster changes.', (data.errors || []).length > 0);
+      await loadReps();
+    } catch (err) {
+      toast('Sync failed: ' + (err.message || err), true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Sync from Sheet';
+    }
   });
 
   init();

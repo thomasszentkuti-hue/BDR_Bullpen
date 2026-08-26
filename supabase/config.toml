@@ -2,3 +2,10 @@ project_id = "tvrqhnklnmtrachqackj"
 
 [functions.sync-leaderboard-from-sheet]
 verify_jwt = false
+
+# Called from the manager panel by a signed-in admin, not on a timer — keep
+# the default (true) so Supabase rejects unauthenticated calls before the
+# function even runs. The function itself does a second, explicit check that
+# the caller specifically has the admin role, not just any valid session.
+[functions.sync-roster-from-sheet]
+verify_jwt = true
