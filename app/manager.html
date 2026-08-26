@@ -156,10 +156,8 @@
   }
   .status-btn.in { background: rgba(34,187,91,.13); border-color: rgba(34,187,91,.45); color: var(--green-t); }
   .status-btn.out { background: rgba(220,38,38,.12); border-color: rgba(220,38,38,.45); color: var(--red-t); }
-  .badge-raincheck {
-    background: rgba(242,153,74,.13); border: 1px solid rgba(242,153,74,.45); color: var(--amber-t);
-    padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700;
-  }
+  .status-btn.rain-on { background: rgba(242,153,74,.15); border-color: rgba(242,153,74,.5); color: var(--amber-t); }
+  .status-btn.rain-off { color: var(--ink-3); }
   .link-btn { background: none; border: none; color: var(--s4-line); cursor: pointer; font-size: 12px; font-weight: 700; padding: 0; font-family: inherit; }
   .link-btn:hover { text-decoration: underline; }
   .row-saving { opacity: .5; }
@@ -447,20 +445,12 @@
       tr.appendChild(dialsTd);
 
       const rainTd = document.createElement('td');
-      if (rep.raincheck_status) {
-        const badge = document.createElement('span');
-        badge.className = 'badge-raincheck';
-        badge.textContent = 'Raincheck';
-        rainTd.appendChild(badge);
-        const clearBtn = document.createElement('button');
-        clearBtn.className = 'link-btn';
-        clearBtn.textContent = 'Clear';
-        clearBtn.style.marginLeft = '8px';
-        clearBtn.addEventListener('click', () => updateRep(rep.id, { raincheck_status: false }));
-        rainTd.appendChild(clearBtn);
-      } else {
-        rainTd.textContent = '—';
-      }
+      const rainBtn = document.createElement('button');
+      rainBtn.className = 'status-btn ' + (rep.raincheck_status ? 'rain-on' : 'rain-off');
+      rainBtn.textContent = rep.raincheck_status ? 'RAINCHECK' : 'CLEAR';
+      rainBtn.title = rep.raincheck_status ? 'Click to clear' : 'Click to flag a raincheck';
+      rainBtn.addEventListener('click', () => updateRep(rep.id, { raincheck_status: !rep.raincheck_status }));
+      rainTd.appendChild(rainBtn);
       tr.appendChild(rainTd);
 
       body.appendChild(tr);
