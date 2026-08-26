@@ -98,20 +98,35 @@ async function fetchSheetRange(accessToken: string, range: string): Promise<stri
 // -----------------------------------------------------------------------------
 // Main handler
 // -----------------------------------------------------------------------------
-Deno.serve(async () => {
+// Called both from cron/manual URL visit AND now from a "Sync Leaderboard"
+// button in the manager panel (a cross-origin POST from the browser), so it
+// needs the same CORS preflight handling as sync-roster-from-sheet.
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+};
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: CORS_HEADERS });
+  }
   try {
     const accessToken = await getGoogleAccessToken();
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const today = new Date().toISOString().slice(0, 10);
     const summary = { leaderboard_rows: 0, multiplier_updates: 0, skipped_no_data: false, errors: [] as string[] };
 
-    // ---- The ONLY sheet read: Leaderboard!A2:G12 ----
+    // ---- The ONLY sheet read: Leaderboard!A2:G16 ----
     // Columns: name, connects, units, revenue, sql%, weighted score, rank.
-    // Bounded to row 12 (the "Total" row) deliberately: rows 18-29 hold a second,
-    // duplicate "SE LEADERBOARD" sorted display table (same tab, cols A-F) that
-    // would otherwise get scooped up too. The break-on-"Total" guard below is a
-    // second layer of protection in case the roster grows past row 11.
-    const leaderboardRows = await fetchSheetRange(accessToken, 'Leaderboard!A2:G12');
+    // Bounded well before row 18, where a second, duplicate "SE LEADERBOARD"
+    // sorted display table (same tab, cols A-F) lives — that block would
+    // otherwise get scooped up too. Widened from G12 to G16 (2026-08-26) now
+    // that the roster is 12 SEs instead of 10 — G12 was silently dropping the
+    // last couple of reps. Bump this again if the roster grows past ~14.
+    // The break-on-"Total"/"Weightings" guard below is a second layer of
+    // protection either way.
+    const leaderboardRows = await fetchSheetRange(accessToken, 'Leaderboard!A2:G16');
 
     const parsed: { name: string; connects: number; units: number; revenue: number; sqlRate: number; weightedScore: number; rank: number | null }[] = [];
     for (const row of leaderboardRows) {
@@ -171,9 +186,9 @@ Deno.serve(async () => {
       }
     }
 
-    return new Response(JSON.stringify(summary), { headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify(summary), { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } });
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } });
   }
 });
