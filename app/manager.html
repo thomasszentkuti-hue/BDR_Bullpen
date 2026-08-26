@@ -52,6 +52,15 @@
     pointer-events: none; filter: blur(8px);
   }
 
+  /* ================= "4" WATERMARK ================= */
+  .watermark {
+    position: fixed; left: -7vw; bottom: -14vh;
+    width: min(72vh, 700px); height: min(72vh, 700px);
+    z-index: -1; pointer-events: none; opacity: .045; user-select: none;
+  }
+  .watermark svg { width: 100%; height: 100%; display: block; }
+  .watermark text { font-family: 'Poppins', sans-serif; font-weight: 700; }
+
   /* ================= HEADER ================= */
   header {
     width: 100%; background: rgba(0,0,0,.35); backdrop-filter: blur(10px); position: relative; z-index: 2;
@@ -234,6 +243,14 @@
   </svg>
 </div>
 <div class="glow-corner" aria-hidden="true"></div>
+
+<!-- big greyed-out "4" brand watermark -->
+<div class="watermark" aria-hidden="true">
+  <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="200" cy="200" r="170" stroke="#8fc4ff" stroke-width="26"/>
+    <text x="200" y="216" text-anchor="middle" dominant-baseline="middle" font-size="238" fill="#8fc4ff">4</text>
+  </svg>
+</div>
 
 <header>
   <div class="brand">
