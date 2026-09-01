@@ -308,7 +308,6 @@
           <h1>Rep roster</h1>
           <p class="sub">Changes save automatically. Archived reps are hidden here.</p>
         </div>
-        <button class="btn btn-sync" id="syncRosterBtn">Sync from Sheet</button>
       </div>
       <div id="panelError" class="error hidden" aria-live="polite"></div>
       <div style="overflow-x:auto">
@@ -622,28 +621,6 @@
 
   el('signOutBtn').addEventListener('click', async () => {
     await supabase.auth.signOut();
-  });
-
-  el('syncRosterBtn').addEventListener('click', async () => {
-    const btn = el('syncRosterBtn');
-    btn.disabled = true;
-    btn.textContent = 'Syncing…';
-    try {
-      const { data, error } = await supabase.functions.invoke('sync-roster-from-sheet');
-      if (error) throw error;
-      const parts = [];
-      if (data.added?.length) parts.push('Added: ' + data.added.join(', '));
-      if (data.unarchived?.length) parts.push('Restored: ' + data.unarchived.join(', '));
-      if (data.archived?.length) parts.push('Archived: ' + data.archived.join(', '));
-      if (data.errors?.length) parts.push('Errors: ' + data.errors.join('; '));
-      toast(parts.length ? parts.join(' · ') : 'No roster changes.', (data.errors || []).length > 0);
-      await loadReps();
-    } catch (err) {
-      toast('Sync failed: ' + (err.message || err), true);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Sync from Sheet';
-    }
   });
 
   el('refreshAuditBtn').addEventListener('click', async () => {
