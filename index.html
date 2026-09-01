@@ -166,6 +166,7 @@
     text-decoration: underline; text-decoration-color: rgba(126,147,179,.35); transition: color .15s;
   }
   .link-cancel:hover { color: #fff; }
+  .link-cancel:disabled { opacity: .5; cursor: not-allowed; text-decoration: none; }
 
   /* ================= PROPOSAL ================= */
   .badge-type {
@@ -303,6 +304,14 @@
 <main>
 <div class="stack">
 
+  <!-- LOADING VIEW — shown until the initial session check resolves, so the
+       page doesn't flash blank while Supabase auth loads. -->
+  <div id="loadingView" class="card center">
+    <div class="kicker">Bullpen Router</div>
+    <h1>Loading…</h1>
+    <p class="sub">Checking your sign-in status.</p>
+  </div>
+
   <!-- LOGIN VIEW -->
   <div id="loginView" class="card center hidden">
     <div class="kicker">Bullpen Router</div>
@@ -312,7 +321,7 @@
       <svg viewBox="0 0 48 48" width="18" height="18"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.6 32.9 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.5 29.6 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.5 29.6 4.5 24 4.5c-7.7 0-14.4 4.4-17.7 10.2z"/><path fill="#4CAF50" d="M24 43.5c5.5 0 10.4-1.9 14.1-5.1l-6.5-5.5c-2 1.5-4.6 2.4-7.6 2.4-5.2 0-9.6-3.1-11.3-7.6l-6.6 5.1C9.5 39 16.2 43.5 24 43.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.5 5.5C41.5 36 43.5 30.4 43.5 24c0-1.2-.1-2.4-.4-3.5z"/></svg>
       Sign in with Google
     </button>
-    <div id="loginError" class="error hidden"></div>
+    <div id="loginError" class="error hidden" aria-live="polite"></div>
   </div>
 
   <!-- LEAD ENTRY VIEW -->
@@ -337,7 +346,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       Get Assignment
     </button>
-    <div id="entryError" class="error hidden"></div>
+    <div id="entryError" class="error hidden" aria-live="polite"></div>
   </div>
 
   <!-- PROPOSAL VIEW -->
@@ -364,7 +373,7 @@
     <button class="btn btn-recall hidden" id="recallBtn">DIRECT LOG TO —</button>
 
     <button class="link-cancel" id="cancelBtn">Cancel / fix typo</button>
-    <div id="proposalError" class="error hidden"></div>
+    <div id="proposalError" class="error hidden" aria-live="polite"></div>
   </div>
 
   <!-- SUCCESS VIEW -->
@@ -389,7 +398,8 @@
   // ---- element refs ----
   const el = (id) => document.getElementById(id);
   const views = {
-    login: el('loginView'), entry: el('entryView'), proposal: el('proposalView'), success: el('successView'),
+    loading: el('loadingView'), login: el('loginView'), entry: el('entryView'),
+    proposal: el('proposalView'), success: el('successView'),
   };
   function showView(name) {
     Object.values(views).forEach((v) => v.classList.add('hidden'));
@@ -536,38 +546,65 @@
   }
 
   // ---- YES / NO / RECALL / CANCEL ----
+  // All four buttons are disabled for the duration of their request so a
+  // double-click (or a slow connection) can't fire the same RPC twice —
+  // e.g. two "Yes" clicks both trying to confirm the same session.
+  function setProposalButtonsDisabled(disabled) {
+    ['yesBtn', 'noBtn', 'recallBtn', 'cancelBtn'].forEach((id) => { el(id).disabled = disabled; });
+  }
+
   el('yesBtn').addEventListener('click', async () => {
     clearError('proposalError');
-    const { data, error } = await supabase.rpc('confirm_assignment', { p_session_id: currentSession.id });
-    if (error) { showError('proposalError', error.message); return; }
-    showSuccess(`Logged to ${currentSession.repName}.`);
+    setProposalButtonsDisabled(true);
+    try {
+      const { error } = await supabase.rpc('confirm_assignment', { p_session_id: currentSession.id });
+      if (error) { showError('proposalError', error.message); return; }
+      showSuccess(`Logged to ${currentSession.repName}.`);
+    } finally {
+      setProposalButtonsDisabled(false);
+    }
   });
 
   el('noBtn').addEventListener('click', async () => {
     clearError('proposalError');
-    const { data, error } = await supabase.rpc('skip_assignment', { p_session_id: currentSession.id });
-    if (error) { showError('proposalError', error.message); return; }
-    await attachRepAndShow(data);
+    setProposalButtonsDisabled(true);
+    try {
+      const { data, error } = await supabase.rpc('skip_assignment', { p_session_id: currentSession.id });
+      if (error) { showError('proposalError', error.message); return; }
+      await attachRepAndShow(data);
+    } finally {
+      setProposalButtonsDisabled(false);
+    }
   });
 
   el('recallBtn').addEventListener('click', async () => {
     clearError('proposalError');
-    const { data, error } = await supabase.rpc('recall_last_skipped', { p_session_id: currentSession.id });
-    if (error) { showError('proposalError', error.message); return; }
-    showSuccess('Logged to the recalled rep.');
+    setProposalButtonsDisabled(true);
+    try {
+      const { error } = await supabase.rpc('recall_last_skipped', { p_session_id: currentSession.id });
+      if (error) { showError('proposalError', error.message); return; }
+      showSuccess('Logged to the recalled rep.');
+    } finally {
+      setProposalButtonsDisabled(false);
+    }
   });
 
   // Cancel: surface any RPC error inline instead of silently swallowing it.
   el('cancelBtn').addEventListener('click', async () => {
     clearError('proposalError');
-    if (currentSession) {
-      const { error } = await supabase.rpc('cancel_assignment', { p_session_id: currentSession.id });
-      if (error) {
-        showError('proposalError', 'Cancel failed: ' + error.message);
-        return;
+    setProposalButtonsDisabled(true);
+    try {
+      if (currentSession) {
+        const { error } = await supabase.rpc('cancel_assignment', { p_session_id: currentSession.id });
+        if (error) {
+          showError('proposalError', 'Cancel failed: ' + error.message);
+          return;
+        }
       }
+      resetToEntry();
+    } finally {
+      setProposalButtonsDisabled(false);
     }
-    resetToEntry();
   });
 
   el('nextLeadBtn').addEventListener('click', resetToEntry);

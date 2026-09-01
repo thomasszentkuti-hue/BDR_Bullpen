@@ -265,6 +265,16 @@
 
 <main id="mainEl">
 
+  <!-- LOADING VIEW — shown until session + admin-role check resolves, so the
+       page doesn't flash blank while that round-trip is in flight. -->
+  <div id="loadingView" class="stack">
+    <div class="card center">
+      <div class="kicker">Manager Access</div>
+      <h1>Loading…</h1>
+      <p class="sub">Checking your sign-in and access level.</p>
+    </div>
+  </div>
+
   <!-- LOGIN VIEW -->
   <div id="loginView" class="stack hidden">
     <div class="card center">
@@ -275,7 +285,7 @@
         <svg viewBox="0 0 48 48" width="18" height="18"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.6 32.9 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.5 29.6 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.5 29.6 4.5 24 4.5c-7.7 0-14.4 4.4-17.7 10.2z"/><path fill="#4CAF50" d="M24 43.5c5.5 0 10.4-1.9 14.1-5.1l-6.5-5.5c-2 1.5-4.6 2.4-7.6 2.4-5.2 0-9.6-3.1-11.3-7.6l-6.6 5.1C9.5 39 16.2 43.5 24 43.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.5 5.5C41.5 36 43.5 30.4 43.5 24c0-1.2-.1-2.4-.4-3.5z"/></svg>
         Sign in with Google
       </button>
-      <div id="loginError" class="error hidden" style="margin:14px 0 0"></div>
+      <div id="loginError" class="error hidden" aria-live="polite" style="margin:14px 0 0"></div>
     </div>
   </div>
 
@@ -300,7 +310,7 @@
         </div>
         <button class="btn btn-sync" id="syncRosterBtn">Sync from Sheet</button>
       </div>
-      <div id="panelError" class="error hidden"></div>
+      <div id="panelError" class="error hidden" aria-live="polite"></div>
       <div style="overflow-x:auto">
         <table>
           <thead>
@@ -327,7 +337,7 @@
         </div>
         <button class="btn btn-sync" id="syncLeaderboardBtn">Sync Leaderboard</button>
       </div>
-      <div id="oddsError" class="error hidden"></div>
+      <div id="oddsError" class="error hidden" aria-live="polite"></div>
       <div style="overflow-x:auto">
         <table>
           <thead>
@@ -351,8 +361,9 @@
           <h1>Assignment audit log</h1>
           <p class="sub">Most recent confirmed / recalled leads, newest first.</p>
         </div>
+        <button class="btn btn-sync" id="refreshAuditBtn">Refresh</button>
       </div>
-      <div id="auditError" class="error hidden"></div>
+      <div id="auditError" class="error hidden" aria-live="polite"></div>
       <div style="overflow-x:auto">
         <table>
           <thead>
@@ -383,7 +394,10 @@
   const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
   const el = (id) => document.getElementById(id);
-  const views = { login: el('loginView'), unauthorized: el('unauthorizedView'), panel: el('panelView') };
+  const views = {
+    loading: el('loadingView'), login: el('loginView'),
+    unauthorized: el('unauthorizedView'), panel: el('panelView'),
+  };
   function showView(name) {
     Object.values(views).forEach((v) => v.classList.add('hidden'));
     views[name].classList.remove('hidden');
@@ -575,10 +589,16 @@
   }
 
   async function updateRep(id, patch) {
+    // Disable every control in the row (not just style it) while the save is
+    // in flight, so a fast double-click on a toggle (e.g. raincheck) can't
+    // fire two conflicting updates before the first one lands.
     const row = document.querySelector(`tr[data-id="${id}"]`);
+    const rowControls = row ? [...row.querySelectorAll('button, input')] : [];
     if (row) row.classList.add('row-saving');
+    rowControls.forEach((c) => { c.disabled = true; });
     const { error } = await supabase.from('reps').update(patch).eq('id', id);
     if (row) row.classList.remove('row-saving');
+    rowControls.forEach((c) => { c.disabled = false; });
     if (error) {
       toast('Save failed: ' + error.message, true);
       return;
@@ -647,6 +667,18 @@
     } finally {
       btn.disabled = false;
       btn.textContent = 'Sync Leaderboard';
+    }
+  });
+
+  el('refreshAuditBtn').addEventListener('click', async () => {
+    const btn = el('refreshAuditBtn');
+    btn.disabled = true;
+    btn.textContent = 'Refreshing…';
+    try {
+      await loadAuditLog();
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Refresh';
     }
   });
 
