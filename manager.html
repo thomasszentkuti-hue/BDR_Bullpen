@@ -335,7 +335,6 @@
           <h1>Weighting &amp; odds</h1>
           <p class="sub">Live from the same view the lottery draws from — read-only.</p>
         </div>
-        <button class="btn btn-sync" id="syncLeaderboardBtn">Sync Leaderboard</button>
       </div>
       <div id="oddsError" class="error hidden" aria-live="polite"></div>
       <div style="overflow-x:auto">
@@ -644,29 +643,6 @@
     } finally {
       btn.disabled = false;
       btn.textContent = 'Sync from Sheet';
-    }
-  });
-
-  el('syncLeaderboardBtn').addEventListener('click', async () => {
-    const btn = el('syncLeaderboardBtn');
-    btn.disabled = true;
-    btn.textContent = 'Syncing…';
-    try {
-      const { data, error } = await supabase.functions.invoke('sync-leaderboard-from-sheet');
-      if (error) throw error;
-      if (data.skipped_no_data) {
-        toast('No new data in the Sheet yet — nothing to sync.');
-      } else {
-        const parts = [`${data.leaderboard_rows} rows`, `${data.multiplier_updates} multipliers updated`];
-        if (data.errors?.length) parts.push('errors: ' + data.errors.join('; '));
-        toast(parts.join(' · '), (data.errors || []).length > 0);
-      }
-      await loadOdds();
-    } catch (err) {
-      toast('Sync failed: ' + (err.message || err), true);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Sync Leaderboard';
     }
   });
 
