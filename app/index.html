@@ -202,6 +202,94 @@
   .success .card-body-text { text-align: center; font-size: 16px; font-weight: 600; color: var(--ink-0); margin-bottom: 4px; }
 
   .hidden { display: none !important; }
+
+  /* ================= DISCOVERY BLOCK ================= */
+  .section-divider { height: 1px; background: var(--hairline); margin: 28px 0 4px; }
+  .discovery-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+  .discovery-title { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 13px; color: var(--ink-0); text-transform: uppercase; letter-spacing: .06em; }
+  .discovery-optional { font-size: 11px; color: var(--ink-3); font-weight: 600; }
+
+  .autosuggest-wrap { position: relative; }
+  input[type="text"] {
+    width: 100%; padding: 13px 14px; border: 1.5px solid var(--hairline); border-radius: 13px; font-size: 16px;
+    font-family: inherit; font-weight: 600; background: var(--field); color: var(--ink-0); transition: border-color .15s, box-shadow .15s, background .15s;
+  }
+  input[type="text"]::placeholder { color: #55677f; font-weight: 500; }
+  input[type="text"]:focus { outline: none; border-color: var(--s4-blue); background: rgba(20,110,246,.07); box-shadow: 0 0 0 4px rgba(20,110,246,.18); }
+
+  .suggest-list {
+    position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 20; max-height: 232px; overflow-y: auto;
+    background: #0e1b30; border: 1.5px solid var(--glass-border); border-radius: 13px; padding: 6px;
+    box-shadow: 0 16px 36px -10px rgba(0,0,0,.65);
+  }
+  .suggest-item {
+    padding: 10px 12px; border-radius: 9px; cursor: pointer; font-size: 14.5px; font-weight: 600; color: var(--ink-1);
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; transition: background .12s;
+  }
+  .suggest-item:hover, .suggest-item.active { background: rgba(20,110,246,.16); color: #fff; }
+  .suggest-item .suggest-tag {
+    font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--s4-line);
+    border: 1px solid rgba(88,170,253,.35); border-radius: 999px; padding: 2px 8px; flex-shrink: 0;
+  }
+  .suggest-item.other-item { color: var(--ink-3); border-top: 1px solid var(--hairline); margin-top: 4px; padding-top: 10px; }
+  .suggest-empty { padding: 10px 12px; font-size: 13px; color: var(--ink-3); }
+
+  .battle-card-chip {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px;
+    background: rgba(20,110,246,.1); border: 1px solid rgba(20,110,246,.35); border-radius: 12px; padding: 10px 14px;
+  }
+  .battle-card-chip span { font-size: 13px; font-weight: 700; color: #bcd8ff; }
+  .battle-card-chip button {
+    background: var(--s4-blue); color: #fff; border: none; border-radius: 999px; padding: 7px 14px;
+    font-size: 12px; font-weight: 800; cursor: pointer; font-family: inherit; white-space: nowrap; transition: opacity .15s;
+  }
+  .battle-card-chip button:hover { opacity: .88; }
+
+  .rate-row { display: flex; gap: 10px; align-items: stretch; }
+  .rate-row .rate-toggle { flex: 0 0 132px; }
+  .rate-row .input-wrap { flex: 1; }
+
+  .calc-result {
+    margin-top: 14px; background: rgba(34,187,91,.08); border: 1px solid rgba(34,187,91,.3); border-radius: 13px;
+    padding: 13px 16px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .calc-result .calc-label { font-size: 11px; font-weight: 800; color: var(--green-t); text-transform: uppercase; letter-spacing: .06em; }
+  .calc-result .calc-value { font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 800; color: #fff; }
+
+  /* ================= BATTLE CARD MODAL ================= */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 100; background: rgba(2,6,14,.72); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center; padding: 24px; animation: fadeIn .15s ease-out;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal-card {
+    width: 100%; max-width: 520px; max-height: 85vh; overflow-y: auto; position: relative;
+    background: linear-gradient(180deg, #101d33, #0a1424); border: 1px solid var(--glass-border); border-radius: 22px;
+    padding: 32px 30px; box-shadow: 0 30px 70px -16px rgba(0,0,0,.75), 0 0 60px -20px rgba(20,110,246,.3);
+    animation: cardIn .25s cubic-bezier(.2,.8,.25,1);
+  }
+  .modal-close {
+    position: absolute; top: 18px; right: 18px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hairline);
+    background: rgba(255,255,255,.05); color: var(--ink-2); font-size: 18px; line-height: 1; cursor: pointer; transition: all .15s;
+  }
+  .modal-close:hover { background: rgba(255,255,255,.1); color: #fff; }
+  .modal-kicker {
+    display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 800;
+    color: var(--s4-line); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px;
+  }
+  .modal-kicker::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--s4-blue); box-shadow: 0 0 8px var(--s4-blue); }
+  .modal-title { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 24px; margin: 0 0 18px; color: #fff; letter-spacing: -.01em; }
+  .bc-section { margin-bottom: 18px; }
+  .bc-section-title { font-size: 11px; font-weight: 800; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+  .bc-section-body { font-size: 14.5px; font-weight: 600; color: var(--ink-1); line-height: 1.6; }
+  .bc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .bc-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .bc-col li { font-size: 13.5px; font-weight: 600; line-height: 1.5; padding-left: 20px; position: relative; color: var(--ink-1); }
+  .bc-pros li::before { content: '+'; position: absolute; left: 0; color: var(--green-t); font-weight: 800; }
+  .bc-cons li::before { content: '–'; position: absolute; left: 0; color: var(--red-t); font-weight: 800; }
+  .bc-cons li.key { color: #ffd4d4; }
+  .bc-cons li.key::after { content: ' ⚠'; }
+  @media (max-width: 480px) { .bc-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -330,6 +418,52 @@
     <h1>Route a lead</h1>
     <p class="sub">Enter the deal's TTV and whether it's hospitality.</p>
 
+    <!-- DISCOVERY BLOCK — battle cards + rate/bill calculator. Purely additive:
+         nothing here is required to get an assignment, and none of it touches
+         lead_queue or the routing RPCs below. -->
+    <div class="discovery-head">
+      <span class="discovery-title">Discovery</span>
+      <span class="discovery-optional">Optional — doesn't affect routing</span>
+    </div>
+
+    <label for="providerInput">Current Provider</label>
+    <div class="autosuggest-wrap">
+      <input type="text" id="providerInput" autocomplete="off" placeholder="Start typing a provider…" />
+      <div class="suggest-list hidden" id="providerSuggest"></div>
+    </div>
+    <div class="battle-card-chip hidden" id="battleCardChip">
+      <span id="battleCardChipLabel"></span>
+      <button type="button" id="viewBattleCardBtn">View battle card</button>
+    </div>
+
+    <label for="quantityInput">Quantity</label>
+    <input type="number" id="quantityInput" placeholder="e.g. 2" min="0" step="1" />
+
+    <label>Current Rate or Bill</label>
+    <div class="rate-row">
+      <div class="segmented rate-toggle">
+        <button type="button" id="rateDollarBtn" class="active">$ Bill</button>
+        <button type="button" id="ratePercentBtn">% Rate</button>
+      </div>
+      <div class="input-wrap">
+        <span class="prefix" id="rateInputPrefix">$</span>
+        <input type="number" id="rateInput" placeholder="0.00" min="0" step="0.01" />
+      </div>
+    </div>
+
+    <label for="turnoverInput">Monthly Turnover</label>
+    <div class="input-wrap">
+      <span class="prefix">$</span>
+      <input type="number" id="turnoverInput" placeholder="45,000" min="0" step="1" />
+    </div>
+
+    <div class="calc-result hidden" id="calcResult">
+      <span class="calc-label" id="calcLabel">Effective Rate</span>
+      <span class="calc-value" id="calcValue">—</span>
+    </div>
+
+    <div class="section-divider"></div>
+
     <label for="ttvInput">Terminal Transaction Volume</label>
     <div class="input-wrap">
       <span class="prefix">$</span>
@@ -387,6 +521,29 @@
 
 </div>
 </main>
+
+<!-- BATTLE CARD MODAL -->
+<div class="modal-overlay hidden" id="battleCardModal">
+  <div class="modal-card">
+    <button class="modal-close" id="battleCardCloseBtn" aria-label="Close">&times;</button>
+    <div class="modal-kicker">Battle Card</div>
+    <h2 class="modal-title" id="bcName">—</h2>
+    <div class="bc-section">
+      <div class="bc-section-title">Pricing</div>
+      <div class="bc-section-body" id="bcCosts">—</div>
+    </div>
+    <div class="bc-grid">
+      <div class="bc-col bc-pros">
+        <div class="bc-section-title">Strengths</div>
+        <ul id="bcPros"></ul>
+      </div>
+      <div class="bc-col bc-cons">
+        <div class="bc-section-title">Weaknesses to probe</div>
+        <ul id="bcCons"></ul>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script type="module">
   import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -621,7 +778,220 @@
     setHospitality(false);
     clearError('entryError');
     clearError('proposalError');
+    resetDiscovery();
     render();
+  }
+
+  // =============================================================================
+  // DISCOVERY BLOCK — battle cards + rate/bill calculator.
+  //
+  // Entirely additive and entirely client-side: nothing here is written to
+  // Supabase, nothing here is required before "Get Assignment" works, and
+  // resetToEntry() above just gained one extra line to clear it alongside the
+  // existing TTV/Hospitality reset. The routing flow (propose / confirm /
+  // skip / recall) is untouched.
+  //
+  // Source for the battle-card content: "Master Competitors Sheet" (Tom,
+  // 2026-10-23). Costs are as published there; Pros/Cons bullets were
+  // regrouped from that sheet's raw columns into a clean strengths/weaknesses
+  // split for the modal.
+  // =============================================================================
+  const COMPETITORS = [
+    { name: 'Commonwealth Bank',
+      costs: ['0.99% – All payments', '$29.50/m Rental', '$29.50/m Integration'],
+      pros: ['Straightforward application for existing CBA customers', 'POS integration to many systems via Linkly', 'Same day settlements', 'High limits on MOTO', 'Comes installed'],
+      cons: [['No dedicated account management', false], ['Better suited to larger-volume merchants', false], ['Flat 0.99% stings more on large tickets now surcharging is banned (1 Oct 2026)', true]] },
+    { name: 'ANZ',
+      costs: ['0.95% – Domestic cards', '2.80% – International cards', '$25.00/m Rental'],
+      pros: ['Same-day settlement to ANZ bank only', 'Competitive rates', 'POS integration with Linkly and major providers'],
+      cons: [['International Visa/Mastercard costs 2.80%', false], ['No account management or direct customer service', false], ['Can change your rate without warning or choice', true]] },
+    { name: 'NAB',
+      costs: ['1.05% – All payments', '$25.00/m Rental'],
+      pros: ['Straightforward application for existing NAB customers', 'POS integration to many systems (via Linkly)', 'Same-day settlement if paid into an NAB account', '12-month rental rebate ($300) on new terminals by 30 Nov 2026', 'No cancellation fee'],
+      cons: [['Flat 1.05% stings on larger purchases now surcharging is banned (1 Oct 2026)', true], ['Higher rates if not an existing NAB customer', false]] },
+    { name: 'Westpac',
+      costs: ['0.79% – Terminals', '1.25% – EFTPOS Air (phone app)', '$24.75/m Rental', '$27.50/m Rental (EFTPOS Connect)'],
+      pros: ['Easy application for existing Westpac customers', 'Same-day settlements', '4 terminal options plus the EFTPOS Air phone app'],
+      cons: [['Flat 0.79% stings on larger purchases now surcharging is banned (1 Oct 2026)', true], ['No immediate line for technical support or assistance', false]] },
+    { name: 'Tyro',
+      costs: ['1.3% – All payments', '$29.00/m Rental (Pro Touch/Key)', '$19.00/m Rental (Pro Lite)'],
+      pros: ['Integrates with 580+ POS companies', 'Merchant portal', 'Tap & Save least-cost routing', '1% rate + free rental until 31 Mar 2027 for new customers over $20k/m (join before 24 Nov 2026)'],
+      cons: [['Renowned for terrible customer service', true], ['Complex system setup', false], ['Lower custom pricing only available above $20k/m in card sales', false]] },
+    { name: 'Zeller',
+      costs: ['1.4% – All payments (incl. Amex)', '1.2% – Zeller POS integrated', '1.7% – MOTO', '$0.00/m Rental'],
+      pros: ['7-day settlement', 'Large variety of POS integration partners', 'Easy application', 'Same-day settlement for existing Zeller account holders', 'Next-business-day settlement to external bank accounts'],
+      cons: [['Terminal bought upfront ($99 promo / $199 standard)', false]] },
+    { name: 'PayNuts',
+      costs: ['Custom % – Low Fee plan', 'Custom % – Interchange++ plan', '$0.00/m Rental (Low Fee)', '$29.00/m Rental (Interchange++)', '$0.00 set-up fee'],
+      pros: ['Low Fee plan with $0 rental and a SIM included', 'Interchange++ option with least-cost routing', 'Same-day funding available as an add-on', 'No lock-in contract', '1,000+ POS integrations', 'Free receipt rolls'],
+      cons: [['Newest to market — rates/hardware could change as they grow', false], ['Zero-cost (surcharge) plan scrapped ahead of the surcharge ban', false], ['Rates are quote-based, not published — hard to compare', true]] },
+    { name: 'Square',
+      costs: ['1.6% – Reader & Terminal', '1.9% – Older accounts (Reader)', '2.2% – Online/keyed', '$0.00/m Rental'],
+      pros: ['Integrated POS and payment system', 'Sleek design', 'No ongoing terminal cost'],
+      cons: [['Known for inaccurate bookkeeping at times — can cause headaches at tax time', true], ['Hardware bought upfront (Reader $65, Terminal $329)', false], ['Accounts opened before 30 May 2024 pay 1.9% on Reader', false]] },
+    { name: 'Stripe',
+      costs: ['1.65% + $0.10 – In person', '1.65% + $0.30 – Online', '$0.00/m Rental', '$15.00/m per SIM reader'],
+      pros: ['Strong online payments and developer tools', 'No monthly fee, no lock-in contract', 'Range of readers incl. Tap to Pay on phone'],
+      cons: [['Fixed 10c fee per in-person sale adds up on small tickets', true], ['Best suited to businesses with a developer or compatible POS', false], ['Tap to Pay adds $0.15 per payment', false], ['International cards 3.5% (2.8% from 1 Apr 2027)', false]] },
+    { name: 'SumUp',
+      costs: ['1.4% – All payments', '$0.00/m Rental'],
+      pros: ['No monthly fee and no contract', 'Very low-cost hardware (Air reader $24 one-off)', 'Accepts eftpos, Visa, Mastercard, Amex, JCB, Apple/Google Pay'],
+      cons: [['Payouts take 2-3 days to reach your bank account', false], ['Best for low-volume/mobile businesses — flat 1.4% adds up at higher volume', true]] },
+    { name: 'Bendigo Bank',
+      costs: ['1.3% – All payments', '$29.00/m Rental (Pro Touch/Key)', '$19.00/m Rental (Pro Lite)'],
+      pros: ['Powered by Tyro hardware and POS integrations (580+)', 'Next-day settlement with a Bendigo transaction account', 'No lock-in contract', 'Local support 7 days a week'],
+      cons: [['Same product and pricing as Tyro — no price advantage', true], ['Custom pricing only above $20k/m in card sales', false]] },
+    { name: 'St.George',
+      costs: ['0.79% – All payments', '$24.75/m Rental'],
+      pros: ['Same-day settlement into a St.George account', 'No lock-in contract, no setup fee, free paper rolls', '24/7 support, metro replacement terminal within 4 hours', 'Pre-authorisation'],
+      cons: [['EFTPOS Now is standalone only — POS integration needs EFTPOS Connect', false], ['Same-day settlement needs a St.George account', false], ['Rate reviewed each April and October; Amex/JCB not included', true]] },
+    { name: 'PayChoice',
+      costs: ['1.2% – All payments', '$24.95/m Rental'],
+      pros: ['Free Linkly POS integration', 'Same-day settlement available', 'No lock-in contract, no setup fee', 'PAX A910s Android terminal with 4G and WiFi'],
+      cons: [['Website shows two different prices ($24.95+1.2% and $29.95+1.4%) — confirm before quoting', true], ['Single terminal model (PAX A910s)', false]] },
+    { name: 'Pago',
+      costs: ['Custom % – All payments', '$25.00/m Rental'],
+      pros: ['Free receipt rolls, no sign-up fee', 'Settles to any bank (overnight)', 'Low-cost routing, split billing and tipping', 'Integrates with 70+ POS providers'],
+      cons: [['Rates are not published, quote only', true], ['Overnight settlement, business days only', false], ['Pricing page still promotes surcharging (banned from 1 Oct 2026)', false]] },
+    { name: 'Ezidebit',
+      costs: ['1.5% – Visa & Mastercard', '$0.30 – eftpos per txn', '$29.00/m Rental'],
+      pros: ['One platform for EFTPOS, direct debit, BPAY and online', 'Integrates with 60+ software platforms', 'Automatic daily settlement and reconciliation'],
+      cons: [['1.5% on Visa/Mastercard is well above the big banks (0.79%–1.05%)', true], ['Settlement takes up to 2 business days', false], ['Single terminal (Quest QT850)', false]] },
+    { name: 'APS',
+      costs: ['Custom % – All payments', '$0.00/m Rental'],
+      pros: ['Low-Cost EFTPOS plan with no rental', 'Same-day settlement, 1,000+ POS integrations', 'APS Plus Rewards and Qantas Points on payments', 'Pre-configured terminal, live within a week'],
+      cons: [['Rates not published, quote only', true], ['Still markets No-Cost/surcharge EFTPOS, which the Oct 2026 ban ends', true]] },
+    { name: 'Lightspeed',
+      costs: ['Custom % – All payments', 'Quote only (bundled with POS)'],
+      pros: ['Integrated EFTPOS built into Lightspeed POS', 'Automatic reconciliation', 'Built for hospitality'],
+      cons: [['Only available with Lightspeed POS — no published rates', true], ['Auto-surcharge feature is banned from 1 Oct 2026', true]] },
+  ];
+
+  let selectedProvider = null; // matched COMPETITORS entry, or null for free-text/"Other"
+  let rateMode = 'dollar';     // 'dollar' (bill) or 'percent' (rate)
+
+  function renderSuggestions(query) {
+    const list = el('providerSuggest');
+    const q = query.trim().toLowerCase();
+    const matches = q ? COMPETITORS.filter((c) => c.name.toLowerCase().includes(q)) : COMPETITORS;
+    list.innerHTML = '';
+
+    if (q && matches.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'suggest-empty';
+      empty.textContent = 'No match — use "Other" below.';
+      list.appendChild(empty);
+    } else {
+      matches.slice(0, 6).forEach((c) => {
+        const item = document.createElement('div');
+        item.className = 'suggest-item';
+        item.innerHTML = `<span>${c.name}</span><span class="suggest-tag">Battle card</span>`;
+        item.addEventListener('mousedown', (e) => { e.preventDefault(); chooseProvider(c); });
+        list.appendChild(item);
+      });
+    }
+
+    const other = document.createElement('div');
+    other.className = 'suggest-item other-item';
+    other.textContent = `Other${q ? ` — use "${query.trim()}"` : ' (not listed)'}`;
+    other.addEventListener('mousedown', (e) => { e.preventDefault(); chooseOtherProvider(query.trim()); });
+    list.appendChild(other);
+
+    list.classList.remove('hidden');
+  }
+
+  function chooseProvider(competitor) {
+    selectedProvider = competitor;
+    el('providerInput').value = competitor.name;
+    el('providerSuggest').classList.add('hidden');
+    el('battleCardChip').classList.remove('hidden');
+    el('battleCardChipLabel').textContent = `${competitor.name} battle card ready`;
+    openBattleCard(competitor); // pop up immediately on selection, per the brief
+  }
+
+  function chooseOtherProvider(typedValue) {
+    selectedProvider = null;
+    el('providerInput').value = typedValue;
+    el('providerSuggest').classList.add('hidden');
+    el('battleCardChip').classList.add('hidden');
+  }
+
+  el('providerInput').addEventListener('input', (e) => {
+    selectedProvider = null;
+    el('battleCardChip').classList.add('hidden');
+    renderSuggestions(e.target.value);
+  });
+  el('providerInput').addEventListener('focus', (e) => renderSuggestions(e.target.value));
+  el('providerInput').addEventListener('blur', () => {
+    // If what's typed exactly matches a known provider, treat it as selected
+    // (covers "typed the full name and tabbed away" without clicking the list).
+    const typed = el('providerInput').value.trim().toLowerCase();
+    const exact = COMPETITORS.find((c) => c.name.toLowerCase() === typed);
+    if (exact && (!selectedProvider || selectedProvider.name !== exact.name)) chooseProvider(exact);
+    setTimeout(() => el('providerSuggest').classList.add('hidden'), 120);
+  });
+
+  function openBattleCard(competitor) {
+    el('bcName').textContent = competitor.name;
+    el('bcCosts').textContent = competitor.costs.join(' · ');
+    el('bcPros').innerHTML = competitor.pros.map((p) => `<li>${p}</li>`).join('');
+    el('bcCons').innerHTML = competitor.cons.map(([text, key]) => `<li class="${key ? 'key' : ''}">${text}</li>`).join('');
+    el('battleCardModal').classList.remove('hidden');
+  }
+  el('viewBattleCardBtn').addEventListener('click', () => { if (selectedProvider) openBattleCard(selectedProvider); });
+  el('battleCardCloseBtn').addEventListener('click', () => el('battleCardModal').classList.add('hidden'));
+  el('battleCardModal').addEventListener('click', (e) => { if (e.target.id === 'battleCardModal') e.currentTarget.classList.add('hidden'); });
+
+  // ---- rate/bill toggle + effective-rate calculator ----
+  el('rateDollarBtn').addEventListener('click', () => setRateMode('dollar'));
+  el('ratePercentBtn').addEventListener('click', () => setRateMode('percent'));
+  function setRateMode(mode) {
+    rateMode = mode;
+    el('rateDollarBtn').classList.toggle('active', mode === 'dollar');
+    el('ratePercentBtn').classList.toggle('active', mode === 'percent');
+    el('rateInputPrefix').textContent = mode === 'dollar' ? '$' : '%';
+    el('rateInput').placeholder = mode === 'dollar' ? '0.00' : '1.50';
+    recalcEffective();
+  }
+
+  // Convention matches "Merch statement calc v2": effective rate % = fees / turnover.
+  function recalcEffective() {
+    const rateVal = Number(el('rateInput').value);
+    const turnover = Number(el('turnoverInput').value);
+    const resultBox = el('calcResult');
+
+    if (!rateVal || rateVal <= 0 || !turnover || turnover <= 0) {
+      resultBox.classList.add('hidden');
+      return;
+    }
+
+    if (rateMode === 'dollar') {
+      // They gave us the bill ($) -> back out the effective rate (%).
+      const effectiveRate = (rateVal / turnover) * 100;
+      el('calcLabel').textContent = 'Effective Rate';
+      el('calcValue').textContent = effectiveRate.toFixed(2) + '%';
+    } else {
+      // They gave us the rate (%) -> back out the effective bill ($).
+      const effectiveBill = (rateVal / 100) * turnover;
+      el('calcLabel').textContent = 'Effective Bill';
+      el('calcValue').textContent = '$' + effectiveBill.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    resultBox.classList.remove('hidden');
+  }
+  el('rateInput').addEventListener('input', recalcEffective);
+  el('turnoverInput').addEventListener('input', recalcEffective);
+
+  function resetDiscovery() {
+    selectedProvider = null;
+    rateMode = 'dollar';
+    el('providerInput').value = '';
+    el('quantityInput').value = '';
+    el('rateInput').value = '';
+    el('turnoverInput').value = '';
+    el('providerSuggest').classList.add('hidden');
+    el('battleCardChip').classList.add('hidden');
+    el('calcResult').classList.add('hidden');
+    setRateMode('dollar');
   }
 
   init();
