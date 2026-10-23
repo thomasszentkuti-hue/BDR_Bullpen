@@ -35,17 +35,10 @@
     z-index: -1; pointer-events: none; opacity: .95;
   }
   .globe-wrap svg { width: 100%; height: 100%; display: block; }
-  .dots-scroll { animation: dotsDrift 40s linear infinite; }
-  @keyframes dotsDrift { from { transform: translateX(0); } to { transform: translateX(-288px); } }
-  .flow { stroke-dasharray: 3 14; animation: dashFlow 9s linear infinite; }
-  .flow.slow { animation-duration: 14s; }
-  .flow.rev { animation-direction: reverse; }
-  @keyframes dashFlow { to { stroke-dashoffset: -340; } }
-  .node { animation: nodePulse 5s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
-  .node.d1 { animation-delay: 1.2s; } .node.d2 { animation-delay: 2.4s; }
-  .node.d3 { animation-delay: 3.4s; } .node.d4 { animation-delay: 4.2s; }
-  @keyframes nodePulse { 0%,100% { opacity: .35; } 50% { opacity: 1; } }
-  @media (prefers-reduced-motion: reduce) { .dots-scroll, .flow, .node { animation: none; } }
+  /* Animations removed entirely (2026-10-23) — the continuous looping globe
+     motion was causing noticeable lag. Static SVG stays, nothing moves. */
+  .flow { stroke-dasharray: 3 14; }
+  .node { opacity: .75; }
   @media (max-width: 760px) {
     .globe-wrap { width: 150vw; height: 150vw; right: -70vw; top: 60%; opacity: .55; }
   }
@@ -293,6 +286,9 @@
   .bc-section { margin-bottom: 18px; }
   .bc-section-title { font-size: 11px; font-weight: 800; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
   .bc-section-body { font-size: 14.5px; font-weight: 600; color: var(--ink-1); line-height: 1.6; }
+  .bc-costs-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+  .bc-costs-list li { padding-left: 17px; position: relative; }
+  .bc-costs-list li::before { content: '•'; position: absolute; left: 0; color: var(--s4-line); font-weight: 800; }
   .bc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   .bc-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
   .bc-col li { font-size: 13.5px; font-weight: 600; line-height: 1.5; padding-left: 20px; position: relative; color: var(--ink-1); }
@@ -541,7 +537,7 @@
     </div>
     <div class="bc-section">
       <div class="bc-section-title">Pricing</div>
-      <div class="bc-section-body" id="bcCosts">—</div>
+      <ul class="bc-section-body bc-costs-list" id="bcCosts"></ul>
     </div>
     <div class="bc-grid">
       <div class="bc-col bc-pros">
@@ -811,7 +807,7 @@
     { name: 'Commonwealth Bank', logo: 'assets/logos/commonwealth-bank.png',
       costs: ['0.99% – All payments', '$29.50/m Rental', '$29.50/m Integration'],
       pros: ['Straightforward application for existing CBA customers', 'POS integration to many systems via Linkly', 'Same day settlements', 'High limits on MOTO', 'Comes installed'],
-      cons: [['No dedicated account management', false], ['Better suited to larger-volume merchants', false], ['Flat 0.99% stings more on large tickets now surcharging is banned (1 Oct 2026)', true]] },
+      cons: [['No dedicated account management', false], ['Better suited to larger-volume merchants', false], ['Flat 0.99% comes straight off the merchant\'s turnover now surcharging is banned (1 Oct 2026)', true]] },
     { name: 'ANZ', logo: 'assets/logos/anz.png',
       costs: ['0.95% – Domestic cards', '2.80% – International cards', '$25.00/m Rental'],
       pros: ['Same-day settlement to ANZ bank only', 'Competitive rates', 'POS integration with Linkly and major providers'],
@@ -819,11 +815,11 @@
     { name: 'NAB', logo: 'assets/logos/nab.png',
       costs: ['1.05% – All payments', '$25.00/m Rental'],
       pros: ['Straightforward application for existing NAB customers', 'POS integration to many systems (via Linkly)', 'Same-day settlement if paid into an NAB account', '12-month rental rebate ($300) on new terminals by 30 Nov 2026', 'No cancellation fee'],
-      cons: [['Flat 1.05% stings on larger purchases now surcharging is banned (1 Oct 2026)', true], ['Higher rates if not an existing NAB customer', false]] },
+      cons: [['Flat 1.05% comes straight off the merchant\'s turnover now surcharging is banned (1 Oct 2026)', true], ['Higher rates if not an existing NAB customer', false]] },
     { name: 'Westpac', logo: 'assets/logos/westpac.png',
       costs: ['0.79% – Terminals', '1.25% – EFTPOS Air (phone app)', '$24.75/m Rental', '$27.50/m Rental (EFTPOS Connect)'],
       pros: ['Easy application for existing Westpac customers', 'Same-day settlements', '4 terminal options plus the EFTPOS Air phone app'],
-      cons: [['Flat 0.79% stings on larger purchases now surcharging is banned (1 Oct 2026)', true], ['No immediate line for technical support or assistance', false]] },
+      cons: [['Flat 0.79% comes straight off the merchant\'s turnover now surcharging is banned (1 Oct 2026)', true], ['No immediate line for technical support or assistance', false]] },
     { name: 'Tyro', logo: 'assets/logos/tyro.png',
       costs: ['1.3% – All payments', '$29.00/m Rental (Pro Touch/Key)', '$19.00/m Rental (Pro Lite)'],
       pros: ['Integrates with 580+ POS companies', 'Merchant portal', 'Tap & Save least-cost routing', '1% rate + free rental until 31 Mar 2027 for new customers over $20k/m (join before 24 Nov 2026)'],
@@ -944,7 +940,7 @@
 
   function openBattleCard(competitor) {
     el('bcName').textContent = competitor.name;
-    el('bcCosts').textContent = competitor.costs.join(' · ');
+    el('bcCosts').innerHTML = competitor.costs.map((c) => `<li>${c}</li>`).join('');
     el('bcPros').innerHTML = competitor.pros.map((p) => `<li>${p}</li>`).join('');
     el('bcCons').innerHTML = competitor.cons.map(([text, key]) => `<li class="${key ? 'key' : ''}">${text}</li>`).join('');
     const logo = el('bcLogo');
