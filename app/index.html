@@ -153,6 +153,8 @@
   .btn-row .btn { margin: 8px 0; }
   .btn-google { background: #fff; color: #10131a; font-weight: 600; }
   .btn-google:hover { background: #eef2f8; }
+  .btn-ghost { background: rgba(255,255,255,.05); color: var(--ink-1); border: 1.5px solid var(--hairline); }
+  .btn-ghost:hover { background: rgba(255,255,255,.1); color: #fff; }
   .link-cancel {
     display: block; width: 100%; text-align: center; background: none; border: none; cursor: pointer;
     color: var(--ink-3); font-size: 13px; font-weight: 600; font-family: inherit; padding: 14px 0 0;
@@ -249,6 +251,24 @@
   }
   .calc-result .calc-label { font-size: 11px; font-weight: 800; color: var(--green-t); text-transform: uppercase; letter-spacing: .06em; }
   .calc-result .calc-value { font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 800; color: #fff; }
+
+  /* ================= PRICING ENGINE FLAG =================
+     Source: live scenarios Tom ran through the "Blended+ Pricing Tool" Google
+     Sheet (2026-10-24), fitted to Margin ~= TTV x (Quoted Rate - 0.42%).
+     Quoted rate = the merchant's current effective rate (from the Discovery
+     rate/bill field above) undercut by 10bps — only worth pursuing if that
+     undercut rate still clears $100 margin. Uses only fields already
+     captured; no new input. Informational only; never blocks Get Assignment. */
+  /* Small unobtrusive pass/fail symbol sitting inside the TTV input itself —
+     no separate block, no text, just a coloured circle with a check or X. */
+  .input-wrap .pricing-chip {
+    position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+    width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  }
+  .input-wrap .pricing-chip svg { width: 15px; height: 15px; }
+  .pricing-chip.qualify { background: rgba(34,187,91,.2); color: var(--green-t); box-shadow: inset 0 0 0 1.5px rgba(34,187,91,.55); }
+  .pricing-chip.disqualify { background: rgba(220,38,38,.2); color: var(--red-t); box-shadow: inset 0 0 0 1.5px rgba(220,38,38,.55); }
+  #ttvInput { padding-right: 44px; }
 
   /* ================= BATTLE CARD SIDE PANEL =================
      Non-blocking by design: the wrap spans the viewport so the panel can be
@@ -464,6 +484,12 @@
     <div class="input-wrap">
       <span class="prefix">$</span>
       <input type="number" id="ttvInput" placeholder="45,000" min="1" step="1" />
+      <!-- Pricing engine flag — just a pass/fail symbol, no text. Informational
+           only, doesn't gate Get Assignment. -->
+      <span class="pricing-chip hidden" id="pricingFlag" title="">
+        <svg id="pricingFlagPass" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg id="pricingFlagFail" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </span>
     </div>
 
     <!-- Effective rate/bill is calculated from this TTV figure, not a separate
@@ -473,6 +499,11 @@
       <span class="calc-label" id="calcLabel">Effective Rate</span>
       <span class="calc-value" id="calcValue">—</span>
     </div>
+
+    <button type="button" class="btn btn-ghost" id="copyBnaBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/></svg>
+      <span id="copyBnaLabel">Copy BNA to Clipboard</span>
+    </button>
 
     <label>Shift4 Dine / Hospitality?</label>
     <div class="segmented">
@@ -970,6 +1001,7 @@
     el('rateInputPrefix').textContent = mode === 'dollar' ? '$' : '%';
     el('rateInput').placeholder = mode === 'dollar' ? '0.00' : '1.50';
     recalcEffective();
+    updatePricingFlag();
   }
 
   // Convention matches "Merch statement calc v2": effective rate % = fees / turnover.
@@ -1001,6 +1033,92 @@
   el('rateInput').addEventListener('input', recalcEffective);
   el('ttvInput').addEventListener('input', recalcEffective);
 
+  // ---- pricing engine flag ----
+  // Source: live scenarios Tom ran through the "Blended+ Pricing Tool" Google
+  // Sheet (2026-10-24) — fixed rate, varying TTV, then fixed TTV, varying
+  // rate. Fitting all 10 points gives Margin ~= TTV x (Quoted Rate - 0.42%),
+  // where 0.42% is the blended interchange/scheme cost this nets out to.
+  // Quoted rate = the merchant's current effective rate (from the rate/bill
+  // field above, whichever mode it's in) undercut by 10bps — Tom's rule:
+  // only worth sending through if that undercut rate still clears margin.
+  // Floor dropped 10% (2026-10-24, $100 -> $90) to make it easier to pass
+  // through — Tom's fine with the model being optimistic. No text shown,
+  // just a pass/fail symbol inside the TTV field; deliberately reuses fields
+  // already captured, no new input added.
+  const PRICING_COST_RATE_PCT = 0.42;  // blended cost assumption, percentage points
+  const PRICING_UNDERCUT_PCT = 0.10;   // must beat their rate by this many points (10bps)
+  const PRICING_MARGIN_FLOOR = 90;     // minimum $ margin to send through (was $100)
+
+  function updatePricingFlag() {
+    const ttv = Number(el('ttvInput').value);
+    const rateVal = Number(el('rateInput').value);
+    const chip = el('pricingFlag');
+
+    if (!ttv || ttv <= 0 || !rateVal || rateVal <= 0) { chip.classList.add('hidden'); return; }
+
+    const currentRatePct = rateMode === 'dollar' ? (rateVal / ttv) * 100 : rateVal;
+    const quotedRatePct = currentRatePct - PRICING_UNDERCUT_PCT;
+    const estMargin = ttv * ((quotedRatePct - PRICING_COST_RATE_PCT) / 100);
+    const qualifies = estMargin >= PRICING_MARGIN_FLOOR;
+
+    chip.classList.toggle('qualify', qualifies);
+    chip.classList.toggle('disqualify', !qualifies);
+    el('pricingFlagPass').classList.toggle('hidden', !qualifies);
+    el('pricingFlagFail').classList.toggle('hidden', qualifies);
+    chip.title = qualifies ? 'Qualifies to pass through' : 'Do not pass through';
+    chip.classList.remove('hidden');
+  }
+  el('ttvInput').addEventListener('input', updatePricingFlag);
+  el('rateInput').addEventListener('input', updatePricingFlag);
+
+  // ---- copy BNA to clipboard ----
+  // Minimal scope: assembles whatever's already captured in Discovery (not
+  // the full documented BNA field set — SC vs Absorbing, locations, MOTO/POS
+  // type and Amex aren't captured by this tool, so they're left out rather
+  // than guessed).
+  function buildBnaText() {
+    const lines = ['BNA — Business Needs Analysis'];
+    const provider = selectedProvider ? selectedProvider.name : (el('providerInput').value.trim() || null);
+    lines.push(`Current Provider: ${provider || 'Not captured'}`);
+    lines.push(`Quantity: ${el('quantityInput').value || 'Not captured'}`);
+
+    const rateVal = el('rateInput').value;
+    if (rateVal) {
+      lines.push(rateMode === 'dollar'
+        ? `Current Bill: $${Number(rateVal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : `Current Rate: ${Number(rateVal).toFixed(2)}%`);
+      if (!el('calcResult').classList.contains('hidden')) {
+        lines.push(`${el('calcLabel').textContent}: ${el('calcValue').textContent}`);
+      }
+    } else {
+      lines.push('Current Rate/Bill: Not captured');
+    }
+
+    const ttv = el('ttvInput').value;
+    lines.push(`Monthly Turnover (TTV): ${ttv ? '$' + Number(ttv).toLocaleString() : 'Not captured'}`);
+    lines.push(`Shift4 Dine / Hospitality: ${hospitality ? 'Yes' : 'No'}`);
+    return lines.join('\n');
+  }
+
+  async function copyBna() {
+    const text = buildBnaText();
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (err) {
+      // Fallback for contexts without Clipboard API access.
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (err2) { /* nothing more to do */ }
+      document.body.removeChild(ta);
+    }
+    const label = el('copyBnaLabel');
+    const original = label.textContent;
+    label.textContent = 'Copied ✓';
+    setTimeout(() => { label.textContent = original; }, 1800);
+  }
+  el('copyBnaBtn').addEventListener('click', copyBna);
+
   function resetDiscovery() {
     selectedProvider = null;
     rateMode = 'dollar';
@@ -1010,6 +1128,7 @@
     el('providerSuggest').classList.add('hidden');
     el('battleCardChip').classList.add('hidden');
     el('calcResult').classList.add('hidden');
+    el('pricingFlag').classList.add('hidden');
     setRateMode('dollar');
   }
 
