@@ -210,7 +210,7 @@
 
   /* ================= DISCOVERY BLOCK ================= */
   .section-divider { height: 1px; background: var(--hairline); margin: 28px 0 4px; }
-  .discovery-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+  .discovery-head { display: flex; align-items: baseline; justify-content: space-between; margin: 20px 0 4px; }
   .discovery-title { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 13px; color: var(--ink-0); text-transform: uppercase; letter-spacing: .06em; }
   .discovery-optional { font-size: 11px; color: var(--ink-3); font-weight: 600; }
 
@@ -277,6 +277,7 @@
   }
   .input-wrap .pricing-chip svg { width: 15px; height: 15px; }
   .pricing-chip.qualify { background: rgba(34,187,91,.2); color: var(--green-t); box-shadow: inset 0 0 0 1.5px rgba(34,187,91,.55); }
+  .pricing-chip.warn { background: rgba(247,172,99,.22); color: var(--amber); box-shadow: inset 0 0 0 1.5px rgba(247,172,99,.6); }
   .pricing-chip.disqualify { background: rgba(220,38,38,.2); color: var(--red-t); box-shadow: inset 0 0 0 1.5px rgba(220,38,38,.55); }
   #ttvInput { padding-right: 44px; }
 
@@ -453,14 +454,12 @@
   <div id="entryView" class="card hidden">
     <div class="kicker">New Lead</div>
     <h1>Route a lead</h1>
-    <p class="sub">Enter the deal's TTV and whether it's hospitality.</p>
 
     <!-- DISCOVERY BLOCK — battle cards + rate/bill calculator. Purely additive:
          nothing here is required to get an assignment, and none of it touches
          lead_queue or the routing RPCs below. -->
     <div class="discovery-head">
       <span class="discovery-title">Discovery</span>
-      <span class="discovery-optional">Optional — doesn't affect routing</span>
     </div>
 
     <label for="providerInput">Current Provider</label>
@@ -1057,13 +1056,14 @@
   // Quoted rate = the merchant's current effective rate (from the rate/bill
   // field above, whichever mode it's in) undercut by 10bps — Tom's rule:
   // only worth sending through if that undercut rate still clears margin.
-  // Floor dropped 10% twice (2026-10-24: $100 -> $90 -> $81) to make it
-  // easier to pass through — Tom's fine with the model being optimistic.
-  // No text shown, just a pass/fail symbol inside the TTV field;
-  // deliberately reuses fields already captured, no new input added.
+  // Tri-color as of 2026-10-24 (replaces the old single $81 pass/fail floor):
+  // green tick >= $100, amber tick $70-$100, red cross < $70. No text shown,
+  // just the symbol inside the TTV field; deliberately reuses fields already
+  // captured, no new input added.
   const PRICING_COST_RATE_PCT = 0.42;  // blended cost assumption, percentage points
   const PRICING_UNDERCUT_PCT = 0.10;   // must beat their rate by this many points (10bps)
-  const PRICING_MARGIN_FLOOR = 81;     // minimum $ margin to send through (was $90, $100)
+  const PRICING_MARGIN_HIGH = 100;     // green tick at/above this
+  const PRICING_MARGIN_MID = 70;       // amber tick at/above this (below HIGH); red below it
 
   function updatePricingFlag() {
     const ttv = Number(el('ttvInput').value);
@@ -1075,13 +1075,17 @@
     const currentRatePct = rateMode === 'dollar' ? (rateVal / ttv) * 100 : rateVal;
     const quotedRatePct = currentRatePct - PRICING_UNDERCUT_PCT;
     const estMargin = ttv * ((quotedRatePct - PRICING_COST_RATE_PCT) / 100);
-    const qualifies = estMargin >= PRICING_MARGIN_FLOOR;
 
-    chip.classList.toggle('qualify', qualifies);
-    chip.classList.toggle('disqualify', !qualifies);
-    el('pricingFlagPass').classList.toggle('hidden', !qualifies);
-    el('pricingFlagFail').classList.toggle('hidden', qualifies);
-    chip.title = qualifies ? 'Qualifies to pass through' : 'Do not pass through';
+    const tier = estMargin >= PRICING_MARGIN_HIGH ? 'high' : estMargin >= PRICING_MARGIN_MID ? 'mid' : 'low';
+
+    chip.classList.toggle('qualify', tier === 'high');
+    chip.classList.toggle('warn', tier === 'mid');
+    chip.classList.toggle('disqualify', tier === 'low');
+    el('pricingFlagPass').classList.toggle('hidden', tier === 'low');
+    el('pricingFlagFail').classList.toggle('hidden', tier !== 'low');
+    chip.title = tier === 'high' ? 'Strong margin — pass through'
+      : tier === 'mid' ? 'Marginal margin — pass through with caution'
+      : 'Do not pass through';
     chip.classList.remove('hidden');
   }
   el('ttvInput').addEventListener('input', updatePricingFlag);
@@ -1093,7 +1097,7 @@
   // type and Amex aren't captured by this tool, so they're left out rather
   // than guessed).
   function buildBnaText() {
-    const lines = ['BNA — Business Needs Analysis'];
+    const lines = [];
     const provider = selectedProvider ? selectedProvider.name : (el('providerInput').value.trim() || null);
     lines.push(`Current Provider: ${provider || 'Not captured'}`);
     lines.push(`Quantity: ${el('quantityInput').value || 'Not captured'}`);
