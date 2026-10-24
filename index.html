@@ -88,6 +88,16 @@
   }
   .stack { width: 100%; max-width: 450px; }
 
+  /* When the battle card panel is open on a screen wide enough to fit both
+     side by side, shift the centred form left instead of letting the panel
+     float over it (2026-10-24 — the old overlay could cover input fields). On
+     narrower screens there's no room to do this, so the panel stays an
+     overlay there, same as before. */
+  @media (min-width: 1100px) {
+    main { transition: padding-right .22s cubic-bezier(.2,.8,.25,1); }
+    body.battle-open main { padding-right: 420px; }
+  }
+
   .kicker {
     display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 800;
     color: var(--s4-line); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 12px;
@@ -944,7 +954,8 @@
     el('providerSuggest').classList.add('hidden');
     el('battleCardChip').classList.remove('hidden');
     el('battleCardChipLabel').textContent = `${competitor.name} battle card ready`;
-    openBattleCard(competitor); // pop up immediately on selection, per the brief
+    // Doesn't auto-open the battle card anymore (2026-10-24) — only the
+    // "View battle card" button/chip click (wired below) opens it now.
   }
 
   function chooseOtherProvider(typedValue) {
@@ -984,9 +995,14 @@
       logo.classList.add('hidden');
     }
     el('battleCardModal').classList.remove('hidden');
+    document.body.classList.add('battle-open'); // shifts the form over on wide screens, see CSS
+  }
+  function closeBattleCard() {
+    el('battleCardModal').classList.add('hidden');
+    document.body.classList.remove('battle-open');
   }
   el('viewBattleCardBtn').addEventListener('click', () => { if (selectedProvider) openBattleCard(selectedProvider); });
-  el('battleCardCloseBtn').addEventListener('click', () => el('battleCardModal').classList.add('hidden'));
+  el('battleCardCloseBtn').addEventListener('click', closeBattleCard);
   // Note: the panel is non-blocking (pointer-events: none on the wrap outside
   // the panel itself), so there's no click-away-to-close — the rest of the
   // form stays usable while it's open; the X button is the only close action.
@@ -1041,13 +1057,13 @@
   // Quoted rate = the merchant's current effective rate (from the rate/bill
   // field above, whichever mode it's in) undercut by 10bps — Tom's rule:
   // only worth sending through if that undercut rate still clears margin.
-  // Floor dropped 10% (2026-10-24, $100 -> $90) to make it easier to pass
-  // through — Tom's fine with the model being optimistic. No text shown,
-  // just a pass/fail symbol inside the TTV field; deliberately reuses fields
-  // already captured, no new input added.
+  // Floor dropped 10% twice (2026-10-24: $100 -> $90 -> $81) to make it
+  // easier to pass through — Tom's fine with the model being optimistic.
+  // No text shown, just a pass/fail symbol inside the TTV field;
+  // deliberately reuses fields already captured, no new input added.
   const PRICING_COST_RATE_PCT = 0.42;  // blended cost assumption, percentage points
   const PRICING_UNDERCUT_PCT = 0.10;   // must beat their rate by this many points (10bps)
-  const PRICING_MARGIN_FLOOR = 90;     // minimum $ margin to send through (was $100)
+  const PRICING_MARGIN_FLOOR = 81;     // minimum $ margin to send through (was $90, $100)
 
   function updatePricingFlag() {
     const ttv = Number(el('ttvInput').value);
@@ -1129,6 +1145,7 @@
     el('battleCardChip').classList.add('hidden');
     el('calcResult').classList.add('hidden');
     el('pricingFlag').classList.add('hidden');
+    closeBattleCard();
     setRateMode('dollar');
   }
 
