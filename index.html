@@ -256,11 +256,18 @@
   .rate-row .input-wrap { flex: 1; }
 
   .calc-result {
-    margin-top: 14px; background: rgba(34,187,91,.08); border: 1px solid rgba(34,187,91,.3); border-radius: 13px;
-    padding: 13px 16px; display: flex; align-items: center; justify-content: space-between;
+    margin-top: 14px; border-radius: 13px; padding: 13px 16px; display: flex; align-items: center; justify-content: space-between;
+    border: 1px solid var(--hairline); background: rgba(255,255,255,.04);
   }
-  .calc-result .calc-label { font-size: 11px; font-weight: 800; color: var(--green-t); text-transform: uppercase; letter-spacing: .06em; }
+  .calc-result .calc-label { font-size: 11px; font-weight: 800; color: var(--ink-2); text-transform: uppercase; letter-spacing: .06em; }
   .calc-result .calc-value { font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 800; color: #fff; }
+  /* Colour matches the pricing tick/cross in the TTV field below it (2026-10-26). */
+  .calc-result.qualify { background: rgba(34,187,91,.08); border-color: rgba(34,187,91,.3); }
+  .calc-result.qualify .calc-label { color: var(--green-t); }
+  .calc-result.warn { background: rgba(247,172,99,.1); border-color: rgba(247,172,99,.4); }
+  .calc-result.warn .calc-label { color: var(--amber); }
+  .calc-result.disqualify { background: rgba(220,38,38,.08); border-color: rgba(220,38,38,.4); }
+  .calc-result.disqualify .calc-label { color: var(--red-t); }
 
   /* ================= PRICING ENGINE FLAG =================
      Source: live scenarios Tom ran through the "Blended+ Pricing Tool" Google
@@ -1087,6 +1094,12 @@
       : tier === 'mid' ? 'Marginal margin — pass through with caution'
       : 'Do not pass through';
     chip.classList.remove('hidden');
+
+    // Effective Rate/Bill box matches the same tier colour (2026-10-26).
+    const calcBox = el('calcResult');
+    calcBox.classList.toggle('qualify', tier === 'high');
+    calcBox.classList.toggle('warn', tier === 'mid');
+    calcBox.classList.toggle('disqualify', tier === 'low');
   }
   el('ttvInput').addEventListener('input', updatePricingFlag);
   el('rateInput').addEventListener('input', updatePricingFlag);
