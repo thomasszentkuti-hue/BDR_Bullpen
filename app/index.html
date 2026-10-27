@@ -428,6 +428,10 @@
     <span class="brand-sub">Bullpen</span>
   </div>
   <div class="who hidden" id="whoBox">
+    <!-- Standalone recovery for reps who log the meeting before remembering to
+         copy BNA notes — always visible regardless of view, copies whatever
+         was captured on the PREVIOUS lead only (see saveLastBna/getLastBna). -->
+    <a class="manager-link" id="copyLastBnaBtn" href="#"><span id="copyLastBnaLabel">Copy Last BNA</span></a>
     <a class="manager-link hidden" id="managerLink" href="./manager.html">Manager Panel</a>
     <span id="whoEmail"></span>
     <a class="signout" id="signOutBtn">Sign out</a>
@@ -828,11 +832,13 @@
   function resetToEntry() {
     currentLead = null;
     currentSession = null;
+    // resetDiscovery() snapshots the BNA (including current TTV/hospitality)
+    // before anything below clears it — must run first, not last.
+    resetDiscovery();
     el('ttvInput').value = '';
     setHospitality(false);
     clearError('entryError');
     clearError('proposalError');
-    resetDiscovery();
     render();
   }
 
@@ -1133,8 +1139,9 @@
     return lines.join('\n');
   }
 
-  async function copyBna() {
-    const text = buildBnaText();
+  // Shared clipboard helper + button-label flash, used by both the live
+  // "Copy BNA" button and the standalone "Copy Last BNA" recovery button.
+  async function copyTextToClipboard(text) {
     try {
       await navigator.clipboard.writeText(text);
     } catch (err) {
@@ -1145,14 +1152,47 @@
       try { document.execCommand('copy'); } catch (err2) { /* nothing more to do */ }
       document.body.removeChild(ta);
     }
-    const label = el('copyBnaLabel');
+  }
+  function flashLabel(id, text) {
+    const label = el(id);
     const original = label.textContent;
-    label.textContent = 'Copied ✓';
+    label.textContent = text;
     setTimeout(() => { label.textContent = original; }, 1800);
+  }
+
+  async function copyBna() {
+    await copyTextToClipboard(buildBnaText());
+    flashLabel('copyBnaLabel', 'Copied ✓');
   }
   el('copyBnaBtn').addEventListener('click', copyBna);
 
+  // ---- recover the previous lead's BNA ----
+  // Reps kept logging the meeting (which resets the form) before remembering
+  // to hit "Copy BNA to Clipboard". This caches the last lead's BNA text in
+  // localStorage — lightest option available (no backend, survives a page
+  // reload) — and ONLY ever holds one meeting's worth; each reset overwrites
+  // whatever was there before.
+  const LAST_BNA_KEY = 'bullpenLastBna';
+  function saveLastBna(text) {
+    try { localStorage.setItem(LAST_BNA_KEY, text); } catch (err) { /* storage unavailable, skip */ }
+  }
+  function getLastBna() {
+    try { return localStorage.getItem(LAST_BNA_KEY) || ''; } catch (err) { return ''; }
+  }
+  el('copyLastBnaBtn').addEventListener('click', async (e) => {
+    e.preventDefault();
+    const text = getLastBna();
+    if (!text) { flashLabel('copyLastBnaLabel', 'Nothing to copy'); return; }
+    await copyTextToClipboard(text);
+    flashLabel('copyLastBnaLabel', 'Copied ✓');
+  });
+
   function resetDiscovery() {
+    // Snapshot before clearing, but only if something was actually captured —
+    // don't clobber a real previous BNA with an untouched/cancelled lead.
+    const hasData = el('providerInput').value.trim() || el('quantityInput').value || el('rateInput').value || el('ttvInput').value;
+    if (hasData) saveLastBna(buildBnaText());
+
     selectedProvider = null;
     rateMode = 'dollar';
     el('providerInput').value = '';
