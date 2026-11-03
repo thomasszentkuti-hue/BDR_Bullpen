@@ -294,7 +294,7 @@
     <div class="card center">
       <div class="kicker">Manager Access</div>
       <h1>Not authorized</h1>
-      <p class="sub">Your account doesn't have manager access to this panel. Ask whoever administers the Bullpen app to grant you the admin role.</p>
+      <p class="sub">Your account doesn't have manager access to this panel. Ask whoever administers the Bullpen app to grant you the admin or manager role.</p>
     </div>
   </div>
 
@@ -420,6 +420,9 @@
 
   let session = null;
   let reps = [];
+  let myRole = null; // 'admin' or 'manager' — gates raincheck control client-side
+                      // (server-side trigger trg_reps_block_manager_raincheck is
+                      // the real enforcement; this just avoids a failed-save toast)
 
   async function init() {
     const { data } = await supabase.auth.getSession();
@@ -443,10 +446,11 @@
       .eq('user_id', session.user.id)
       .maybeSingle();
 
-    if (roleErr || !roleRow || roleRow.role !== 'admin') {
+    if (roleErr || !roleRow || !['admin', 'manager'].includes(roleRow.role)) {
       showView('unauthorized');
       return;
     }
+    myRole = roleRow.role;
 
     await Promise.all([loadReps(), loadOdds(), loadAuditLog()]);
     showView('panel');
@@ -577,8 +581,16 @@
       const rainBtn = document.createElement('button');
       rainBtn.className = 'status-btn ' + (rep.raincheck_status ? 'rain-on' : 'rain-off');
       rainBtn.textContent = rep.raincheck_status ? 'RAINCHECK' : 'CLEAR';
-      rainBtn.title = rep.raincheck_status ? 'Click to clear' : 'Click to flag a raincheck';
-      rainBtn.addEventListener('click', () => updateRep(rep.id, { raincheck_status: !rep.raincheck_status }));
+      if (myRole === 'manager') {
+        // Managers can see raincheck status but not change it — enforced for
+        // real by the trg_reps_block_manager_raincheck DB trigger; disabling
+        // here just avoids a pointless failed-save toast.
+        rainBtn.disabled = true;
+        rainBtn.title = 'Admin only — managers can’t change raincheck status';
+      } else {
+        rainBtn.title = rep.raincheck_status ? 'Click to clear' : 'Click to flag a raincheck';
+        rainBtn.addEventListener('click', () => updateRep(rep.id, { raincheck_status: !rep.raincheck_status }));
+      }
       rainTd.appendChild(rainBtn);
       tr.appendChild(rainTd);
 
